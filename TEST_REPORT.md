@@ -190,3 +190,29 @@ The refactor-specific before/after test command and results are recorded in `TDD
 ## TDD evidence
 
 See [TDD_LOG.md](TDD_LOG.md) for red test commits, observed failing outcomes, implementation commits, passing reruns and the concurrency-test scope. Tests and test result commits precede the corresponding implementation commits throughout the recorded branch history.
+
+## Purchase history and confirmation changes (2026-10-25)
+
+### Test-first results
+
+- Backend red, commit `8a191df`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest -q tests/test_purchase_history.py tests/test_migrations.py` — **7 failed, 1 passed**, one upstream Starlette/AnyIO deprecation warning. The history model/routes/migration were absent and an injected history-write failure exposed that stock rollback behavior was not yet implemented.
+- Backend green, commit `0699d44`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest -q tests/test_purchase_history.py tests/test_purchases.py tests/test_migrations.py` — **9 passed**, one upstream warning.
+- Frontend red, commit `35e7289`: `pnpm test` — **10 failed, 20 passed**. The focused confirmation and history expectations failed while those workflows were absent.
+- Account isolation red, commit `7f3dd00`: `pnpm exec vitest run src/App.test.jsx -t "does not retain one account"` — **1 failed, 30 skipped** because the previous account's purchase remained visible after sign-out.
+- Late-request isolation red, commit `844ae0f`: `pnpm exec vitest run src/App.test.jsx -t "ignores a purchase-history response"` — **1 failed, 31 skipped** because an in-flight prior-account response could populate the next account's history.
+- Current frontend green, commit `36400de`: `pnpm test` — **32 passed**. The account-isolation tests now pass together: **2 passed, 30 skipped**.
+
+### Full local verification on implementation commit `36400ded9d35c46660908d67ff35fb5650bdef69`
+
+| Exact command | Observed result |
+| --- | --- |
+| From `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing` | **53 passed** in 46.93s; **95% coverage** (308 statements, 16 missed); one upstream Starlette `anyio.abc.BlockingPortal` deprecation warning. |
+| From `backend`: `.\.venv\Scripts\ruff.exe check app tests` | All checks passed. |
+| From `backend`: `$dbPath = Join-Path $env:TEMP ('dealership-history-final-' + [guid]::NewGuid().ToString('N') + '.db'); $env:DATABASE_URL = 'sqlite:///' + ($dbPath -replace '\\','/'); $env:PYTHONPATH='.'; .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head` | Passed on fresh database `C:\Users\Shashank\AppData\Local\Temp\dealership-history-final-044b7d9115d3456a9ea4214407dc1368.db`; applied `0001_initial`, `0002_vehicle_constraints`, and `0003_purchase_history`. |
+| From `frontend`: `pnpm test` | **32 passed**, 1 test file. |
+| From `frontend`: `pnpm test:responsive -- --screenshots` | All 4 viewport runs passed for sign-in, customer/admin inventory and history, details and confirmation states. No overflow, control/label/focus failures, or axe findings. Screenshots refreshed. |
+| From `frontend`: `pnpm lint` | Passed; ESLint reported no findings. |
+| From `frontend`: `pnpm build` | Passed; Vite transformed 1,592 modules; CSS 14.78 kB and JS 212.61 kB before gzip. |
+| `git diff --check` | Passed before feature commit. |
+
+The responsive browser audit uses deterministic API fixtures. It is not a physical-device check or a full screen-reader audit. PostgreSQL verification is delegated to the PostgreSQL 16 GitHub Actions job; its result for the final pushed commit is recorded after that run completes. Purchases are simulated inventory changes; no payment is processed.
