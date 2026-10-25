@@ -69,3 +69,11 @@ Every red result below was observed before the implementation commit for that be
 - Passing implementation result: pending.
 
 - Passing rerun before migration implementation commit: `python -m pytest -q tests/test_migrations.py` — **1 passed**; created SQLite schema contains `users`, `vehicles`, and `alembic_version` at `0001_initial`.
+
+## Frontend account forms
+
+- Red tests: `frontend/src/App.test.jsx`
+- Command: `pnpm test` (working directory `frontend`)
+- Observed result against the empty React screen: **2 failed**. The sign-in label and registration switch button were absent.
+- Test-first commit: recorded by the commit containing these tests.
+- Passing implementation result: pending.
