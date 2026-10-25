@@ -136,7 +136,11 @@ def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return {"access_token": create_access_token(user), "token_type": "bearer"}
+    return {
+        "access_token": create_access_token(user),
+        "token_type": "bearer",
+        "is_admin": user.is_admin,
+    }
 
 
 @app.get("/api/vehicles", response_model=list[VehicleResponse])
