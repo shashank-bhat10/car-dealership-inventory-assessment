@@ -216,3 +216,9 @@ See [TDD_LOG.md](TDD_LOG.md) for red test commits, observed failing outcomes, im
 | `git diff --check` | Passed before feature commit. |
 
 The responsive browser audit uses deterministic API fixtures. It is not a physical-device check or a full screen-reader audit. PostgreSQL verification is delegated to the PostgreSQL 16 GitHub Actions job; its result for the final pushed commit is recorded after that run completes. Purchases are simulated inventory changes; no payment is processed.
+
+### GitHub Actions verification
+
+GitHub Actions run [40195184620](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40195184620) completed with **success** on branch `submission/tdd-kata`, commit `f28e695ba0b0970d42bf811a55f43ef0f1a85248`. Backend, PostgreSQL, and frontend jobs all succeeded. The PostgreSQL job reported **21 passed, 1 warning** for `tests/test_postgres_configuration.py`, `tests/test_vehicles.py`, `tests/test_purchases.py`, and `tests/test_purchase_history.py`; `alembic upgrade head` applied `0001_initial`, `0002_vehicle_constraints`, and `0003_purchase_history`. The frontend job completed tests, responsive browser audit, lint, and production build. The backend job completed Ruff, the full coverage test command, and migration.
+
+Warnings observed: PostgreSQL job's upstream Starlette/AnyIO `BlockingPortal` deprecation, PostgreSQL container's trust-authentication initialization notice, and GitHub's Node.js 20 deprecation warning for `actions/checkout@v4` and `actions/setup-python@v5`. No project tests were weakened or warnings suppressed. This CI run tested the feature commit; the subsequent documentation-only commit has its own run linked once it completes.
