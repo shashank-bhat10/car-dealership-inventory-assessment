@@ -49,3 +49,11 @@ Every red result below was observed before the implementation commit for that be
 - Passing implementation result: pending.
 
 - Passing rerun before admin implementation commit: python -m pytest -q tests/test_admin.py tests/test_vehicles.py tests/test_login.py tests/test_registration.py — **14 passed, 1 upstream warning**.
+
+## Protected purchase and concurrent stock boundaries
+
+- Red tests: `backend/tests/test_purchases.py`
+- Command: `python -m pytest -q tests/test_purchases.py` (working directory `backend`, `PYTHONPATH=.`)
+- Observed result before purchase implementation: **2 failed, 1 warning**. A valid purchase received HTTP 404; the concurrency test observed no successful purchases because the endpoint was absent. The warning was the upstream Starlette deprecation.
+- Test-first commit: recorded by the commit containing these tests.
+- Passing implementation result: pending.
