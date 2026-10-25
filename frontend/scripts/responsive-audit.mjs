@@ -171,16 +171,28 @@ async function assertNoAxeViolations(page, viewport, screen) {
   }
 }
 
+async function assertDetailsHeaderSpacing(page, viewport, screen) {
+  if (!screen.includes("details")) return;
+  const spacing = await page.evaluate(() => {
+    const back = document.querySelector(".vehicle-page .back-link")?.getBoundingClientRect();
+    const eyebrow = document.querySelector(".vehicle-page > .eyebrow")?.getBoundingClientRect();
+    return back && eyebrow ? eyebrow.top - back.bottom : null;
+  });
+  if (spacing === null || spacing < 8) recordFailure(viewport, screen, `vehicle details label overlaps or crowds back navigation (spacing ${spacing}px)`);
+}
+
 async function auditScreen(page, viewport, screen, captureName) {
   await assertNoHorizontalOverflow(page, viewport, screen);
   await assertLabeledControls(page, viewport, screen);
   await assertKeyboardFocus(page, viewport, screen);
   await assertNoAxeViolations(page, viewport, screen);
+  await assertDetailsHeaderSpacing(page, viewport, screen);
   const isMobileCustomerScreen = viewport.width === 375 && screen === "customer inventory";
   const isMobileDetailsScreen = viewport.width === 375 && screen === "vehicle details";
   const isDesktopScreenshot = viewport.width === 1440 && captureName;
   if (screenshotsRequested && (isDesktopScreenshot || isMobileCustomerScreen || isMobileDetailsScreen)) {
     const screenshotName = isMobileCustomerScreen ? "customer-inventory-mobile.png" : isMobileDetailsScreen ? "vehicle-details-mobile.png" : captureName;
+    await page.evaluate(() => document.activeElement?.blur());
     await page.screenshot({ path: path.join(screenshotDirectory, screenshotName), fullPage: true });
   }
 }
