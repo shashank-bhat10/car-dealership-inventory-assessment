@@ -411,6 +411,18 @@ describe("inventory dashboard", () => {
     expect(fetchMock.mock.calls[1][1].headers.get("Authorization")).toBe("Bearer admin-token");
   });
 
+  it("restores focus to the inventory heading after confirmed deletion removes the opener", async () => {
+    const fetchMock = adminFetchMock([vehicle], {}, []);
+    renderAdmin(fetchMock);
+    await screen.findByRole("heading", { name: "Volvo XC60" });
+    await userEvent.setup().click(screen.getByRole("button", { name: "Delete" }));
+    await userEvent.setup().click(await screen.findByRole("button", { name: "Delete vehicle" }));
+
+    const inventoryHeading = await screen.findByRole("heading", { name: "Available vehicles" });
+    expect(document.activeElement).toBe(inventoryHeading);
+    expect(fetchMock.mock.calls[1][1].method).toBe("DELETE");
+  });
+
   it("cancels delete without an API request and returns focus to the opener", async () => {
     const fetchMock = adminFetchMock([vehicle], {}, []);
     renderAdmin(fetchMock);
