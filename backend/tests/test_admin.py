@@ -61,3 +61,19 @@ def test_restock_quantity_must_be_positive():
             json={"quantity": quantity},
             headers=admin,
         ).status_code == 422
+
+
+def test_restock_cannot_exceed_the_vehicle_stock_limit():
+    admin = create_account("admin@example.com")
+    response = client.post(
+        "/api/vehicles",
+        json={"make": "Toyota", "model": "Limit", "category": "Sedan", "price": "10000", "quantity": 100000},
+        headers=admin,
+    )
+    vehicle_id = response.json()["id"]
+
+    result = client.post(
+        f"/api/vehicles/{vehicle_id}/restock", json={"quantity": 1}, headers=admin
+    )
+    assert result.status_code == 422
+    assert client.get("/api/vehicles", headers=admin).json()[0]["quantity"] == 100000

@@ -39,3 +39,11 @@ Every red result below was observed before the implementation commit for that be
 - Observed result before admin implementation: **3 failed, 1 warning**. Delete returned 405 because the vehicle resource had only a PUT route; restock returned 404. The warning was the upstream Starlette deprecation.
 - Test-first commit: recorded by the commit containing these tests.
 - Passing implementation result: pending.
+
+## Restock quantity ceiling
+
+- Red test: `test_restock_cannot_exceed_the_vehicle_stock_limit` in `backend/tests/test_admin.py`
+- Command: `python -m pytest -q tests/test_admin.py::test_restock_cannot_exceed_the_vehicle_stock_limit` (working directory `backend`, `PYTHONPATH=.`)
+- Observed result before restock implementation: **1 failed, 1 warning**. The missing endpoint returned HTTP 404 instead of the expected 422 and did not yet expose the post-restock stock assertion.
+- Test-first commit: recorded by the commit containing this test.
+- Passing implementation result: pending.
