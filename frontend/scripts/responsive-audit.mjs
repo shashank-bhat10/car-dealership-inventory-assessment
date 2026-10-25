@@ -87,7 +87,9 @@ async function installApiMock(page) {
       await route.fulfill({ status: 404, json: { detail: "Vehicle not found" } });
       return;
     }
-    if (request.method() === "PUT") {
+    if (request.method() === "GET") {
+      await route.fulfill({ json: inventory[vehicleIndex] });
+    } else if (request.method() === "PUT") {
       inventory[vehicleIndex] = { ...body, id: vehicleId };
       await route.fulfill({ json: inventory[vehicleIndex] });
     } else if (request.method() === "DELETE") {
@@ -175,9 +177,10 @@ async function auditScreen(page, viewport, screen, captureName) {
   await assertKeyboardFocus(page, viewport, screen);
   await assertNoAxeViolations(page, viewport, screen);
   const isMobileCustomerScreen = viewport.width === 375 && screen === "customer inventory";
+  const isMobileDetailsScreen = viewport.width === 375 && screen === "vehicle details";
   const isDesktopScreenshot = viewport.width === 1440 && captureName;
-  if (screenshotsRequested && (isDesktopScreenshot || isMobileCustomerScreen)) {
-    const screenshotName = isMobileCustomerScreen ? "customer-inventory-mobile.png" : captureName;
+  if (screenshotsRequested && (isDesktopScreenshot || isMobileCustomerScreen || isMobileDetailsScreen)) {
+    const screenshotName = isMobileCustomerScreen ? "customer-inventory-mobile.png" : isMobileDetailsScreen ? "vehicle-details-mobile.png" : captureName;
     await page.screenshot({ path: path.join(screenshotDirectory, screenshotName), fullPage: true });
   }
 }
@@ -209,6 +212,15 @@ async function runViewport(viewport) {
   await page.getByRole("button", { name: "Search inventory" }).click();
   await page.getByRole("button", { name: "Purchase" }).click();
   await page.getByText("1 in stock").waitFor();
+  await page.getByRole("link", { name: "Volvo XC60" }).click();
+  await page.getByRole("heading", { name: "Volvo XC60" }).waitFor();
+  await page.getByText("Vehicle ID").waitFor();
+  await auditScreen(page, viewport, "vehicle details", "vehicle-details.png");
+  await page.getByRole("button", { name: "Purchase" }).click();
+  await page.getByRole("button", { name: "Out of stock" }).waitFor({ state: "visible" });
+  if (!(await page.getByRole("button", { name: "Out of stock" }).isDisabled())) recordFailure(viewport, "vehicle details", "zero-stock purchase button is enabled");
+  await page.getByRole("link", { name: /back to inventory/i }).click();
+  await page.getByRole("heading", { name: "Available vehicles" }).waitFor();
 
   await page.getByRole("button", { name: "Sign out" }).click();
   await signIn(page, "admin@example.com");
@@ -222,17 +234,20 @@ async function runViewport(viewport) {
   })) await page.getByLabel(label).fill(value);
   await page.getByRole("button", { name: "Add vehicle" }).click();
   await page.getByRole("heading", { name: "Honda Civic" }).waitFor();
-  await page.getByRole("button", { name: "Edit" }).last().click();
+  await page.getByRole("link", { name: "Honda Civic" }).click();
+  await page.getByRole("heading", { name: "Honda Civic" }).waitFor();
+  await auditScreen(page, viewport, "administrator vehicle details");
+  await page.getByRole("button", { name: "Edit" }).click();
   await page.getByLabel("Vehicle model").fill("Civic Touring");
   await page.getByRole("button", { name: "Save vehicle" }).click();
   await page.getByRole("heading", { name: "Honda Civic Touring" }).waitFor();
-  await page.getByLabel("Restock quantity for Volvo XC60").fill("2");
-  await page.getByRole("button", { name: "Restock" }).first().click();
-  await page.getByText("3 in stock").waitFor();
-  await page.getByRole("button", { name: "Delete" }).last().click();
+  await page.getByLabel("Restock quantity for Honda Civic Touring").fill("2");
+  await page.getByRole("button", { name: "Restock" }).click();
+  await page.getByText("5 in stock").waitFor();
+  await page.getByRole("button", { name: "Delete" }).click();
   await page.getByRole("heading", { name: "Honda Civic Touring" }).waitFor({ state: "detached" });
 
-  console.log(`PASS ${viewport.width}x${viewport.height}: sign-in, customer inventory, and admin inventory`);
+  console.log(`PASS ${viewport.width}x${viewport.height}: sign-in, customer inventory/details, and admin inventory/details`);
   await context.close();
 }
 
@@ -250,7 +265,7 @@ try {
     for (const failure of failures) console.error(`- ${failure}`);
     process.exitCode = 1;
   } else {
-    console.log(`All ${viewports.length * 3} screen/viewport combinations passed overflow, control, focus, and axe checks.`);
+    console.log(`All ${viewports.length * 5} screen/viewport combinations passed overflow, control, focus, and axe checks.`);
   }
 } finally {
   await browser?.close();
