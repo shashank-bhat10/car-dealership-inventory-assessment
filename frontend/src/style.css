@@ -71,6 +71,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .error-message[role="alert"] { padding: 12px; background: #fff0ed; color: #9d3c36; }
 .page-content > [role="status"] { color: #194c3a; }
 .back-link { display: inline-flex; align-items: center; min-height: 32px; margin: 0 0 20px; text-decoration: none; }
+.vehicle-page > .eyebrow { display: block; margin-bottom: 14px; }
 .vehicle-detail-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); overflow: hidden; border: 1px solid #e0e6e0; background: #fff; }
 .vehicle-detail-card > .vehicle-art { min-height: 100%; }
 .vehicle-detail-card .vehicle-details { align-content: start; padding: clamp(18px, 4vw, 36px); }
