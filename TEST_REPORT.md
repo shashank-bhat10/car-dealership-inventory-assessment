@@ -2,9 +2,26 @@
 
 Run date: **2026-10-25** (local development session; Asia/Kolkata). These results are local observations, not GitHub Actions results.
 
-## Latest previously verified GitHub Actions run
+## Latest verified GitHub Actions run before this documentation update
 
-GitHub Actions run [40196438040](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40196438040) completed successfully on `submission/tdd-kata` at commit `5164d7d4b2141160b397e5079eff311388d94c48`. The Actions API confirms that the backend, PostgreSQL, and frontend jobs all completed successfully. The repository API confirms `submission/tdd-kata` remains the default branch. This is the last verified run before the evidence-only updates in this turn; no later CI result is inferred from it.
+GitHub Actions run [40198386347](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40198386347) completed successfully on `submission/tdd-kata` at commit `4b1213c44be0dd0e299a3f10c28e129d8b2fed54`. The backend job passed Ruff, the complete backend suite (**53 passed, 95% coverage**) and Alembic migration; the PostgreSQL job passed its configured API suite (**21 passed**) and Alembic migration; the frontend job passed `pnpm test`, `pnpm test:responsive`, `pnpm lint`, and `pnpm build`. The backend and PostgreSQL test jobs each reported one upstream Starlette/AnyIO deprecation warning. GitHub also emitted runner Node.js 20 deprecation and action-tooling `DEP0040`/`DEP0169` warnings; PostgreSQL initialization emitted its local trust-authentication notice. No warnings were suppressed. The repository API confirms `submission/tdd-kata` is the public repository's default branch. Run `40196438040` on `5164d7d4b2141160b397e5079eff311388d94c48` and run `40197852387` on `a4cdd4df39fdded670bdc08274d38733cb90740a` are historical successful runs, superseded by `40198386347` at the time of this report update.
+
+## Final local verification (2026-10-25)
+
+These commands were run on the clean `submission/tdd-kata` tip `4b1213c44be0dd0e299a3f10c28e129d8b2fed54`. The only subsequent changes for this audit are documentation corrections; no application code changed.
+
+| Exact command | Observed result |
+| --- | --- |
+| From `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing` | **53 passed** in 52.75s; **95% coverage** (308 statements, 16 missed). One upstream Starlette/AnyIO `BlockingPortal` deprecation warning. |
+| From `backend`: `.\.venv\Scripts\ruff.exe check app tests` | **All checks passed!** |
+| From `backend`: `$env:DATABASE_URL='sqlite:///C:/Users/Shashank/AppData/Local/Temp/dealership-final-audit-4b1213c44be0dd0e.db'; $env:PYTHONPATH='.'; .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head; .\.venv\Scripts\alembic.exe -c alembic.ini current` | Passed on a fresh SQLite database outside the repository; applied `0001_initial`, `0002_vehicle_constraints`, and `0003_purchase_history`; current revision `0003_purchase_history (head)`. The temp database is retained at that path. |
+| From `frontend`: `pnpm test` | **33 passed**, 1 test file. |
+| From `frontend`: `pnpm test:responsive` | All audited cases passed at 320×640, 375×812, 768×1024, and 1440×900 for sign-in, customer/admin inventory and history, details, and confirmations. No overflow, control, focus, or axe findings. |
+| From `frontend`: `pnpm lint` | Passed; ESLint reported no findings. |
+| From `frontend`: `pnpm build` | Passed; Vite transformed 1,592 modules; CSS 14.78 kB and JS 212.61 kB before gzip. |
+| `git diff --check` | Passed after the audit documentation corrections. |
+
+This is an automated browser and DOM accessibility check, not a full screen-reader or physical-device audit. PostgreSQL was verified by the PostgreSQL job in Actions run `40198386347`; no local PostgreSQL service was tested.
 
 ## Delete focus-restoration regression test (2026-10-25)
 
@@ -36,9 +53,9 @@ Temporary account emails are masked in both screenshots; no passwords, tokens, o
 
 ## Evidence records and history audit
 
-All 37 commit hashes cited in `TDD_LOG.md`, excluding its two 11-digit Actions run IDs, resolve as ancestors of the fetched branch tip except the explicitly identified historical refactor pair (`e24a89e…` and `c3f0c9a…`) and old merge `c80cabe`, which are retained in the local backup ref described in the log. The current purchase-history and confirmation Red/Green commits are ancestors of the branch tip. The delete-focus regression test passed against behavior already present; no red run or implementation change is claimed for it.
+The TDD history audit checked the cited commit IDs against the fetched public branch. Historical IDs `e24a89e…` and `c3f0c9a…` and the replaced merge `c80cabe` are not public-branch ancestors and are explicitly disclosed as such; they are not counted as public commits. The distinct backend refactor `ffbd96b8f4d4ab77da900766c118750f05d62528` is an ancestor of the public tip and has the same refactor patch/source as the recorded before/after snapshots, as detailed in `TDD_LOG.md`. The current purchase-history and confirmation Red/Green commits are public ancestors. The delete-focus regression test passed against behavior already present; no red run or implementation change is claimed for it.
 
-`PROMPTS.md` contains two share links only, not transcript exports or a complete record of every AI interaction. The Codex link was supplied by the user and previously confirmed to open anonymously. The ChatGPT link was previously opened anonymously during an earlier Chromium check, but the web fetch during this audit timed out; its current availability could not be re-confirmed.
+`PROMPTS.md` contains two share links only, not transcript exports or a complete record of every AI interaction. During this audit, a cookie-free request to the ChatGPT share URL returned HTTP 200, title `Qualify Next Round Plan`, and embedded project-specific TDD Kata/Codex prompt text, supporting its prompt-planning description. A cookie-free request to the Codex share URL returned HTTP 403, so its current anonymous availability could not be independently confirmed here; the user supplied the URL and had previously confirmed that it opens without signing in. The Codex link remains an explicitly qualified evidence limitation.
 
 After the regression-test and report changes were pushed, GitHub Actions run [40196294964](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40196294964) completed successfully on branch `submission/tdd-kata`, commit `f4290243c45c5a15b049d8701835d9c483a242d3`. I verified that the backend, PostgreSQL, and frontend jobs all succeeded. This run validates the added focus regression test and documentation at that pushed branch tip.
 
@@ -206,9 +223,9 @@ The audit uses Playwright 1.64.1 and axe-core 4.14.0. It starts a local Vite ser
 
 The colors and target sizes were adjusted based on the observed axe/viewport findings, the topbar now wraps at narrow widths, and the brand link relies on its visible text for its accessible name. The audit covers these browser states and viewport sizes only; it is not a full screen-reader audit or a physical-device compatibility test. The Browser audit package installation reported deprecated `eslint@9.19.0` and transitive `whatwg-encoding@3.1.1`; those warnings were left visible and were not changed as part of this task. The screenshots use deterministic mocked API responses and are labeled accordingly in the README.
 
-The backend review found no worthwhile refactor: the shared filter query is already extracted and conditional SQL updates already guard purchase/restock boundaries. No backend source or history was changed. The decision and evidence are recorded in `TDD_LOG.md`.
+The public branch contains a behavior-preserving backend refactor at `ffbd96b8f4d4ab77da900766c118750f05d62528`, which centralizes duplicate invalid-authentication responses. The audit found no need for another backend refactor. The history supports a representative Red–Green–Refactor sequence, but does not claim a separate Refactor step for every behavior; see `TDD_LOG.md`.
 
-The ChatGPT prompt-planning share URL in `PROMPTS.md` was opened in a fresh headless Chromium context without stored sign-in state. It returned HTTP 200 and displayed the shared-conversation notice and conversation text. The Codex conversation link was previously confirmed by the user to open without signing in.
+Historical note: the ChatGPT prompt-planning share URL was opened in a fresh headless Chromium context without stored sign-in state and returned HTTP 200 with conversation text. In the current audit, the ChatGPT link again returned HTTP 200 with project-specific content. The Codex URL returned HTTP 403 to the current cookie-free request, so its anonymous accessibility could not be reconfirmed by this audit; the user previously confirmed it opened without signing in.
 
 The original merge commit `c80cabe5651c6204f35789325cc7adc046822aa8` was replaced by `0775eb96557dca53ee488c2e092a8d2d5bcf1028` to add `Co-authored-by: OpenAI Codex <ai@users.noreply.github.com>`. The replacement retains the original tree and parent order. Its four direct descendants were replayed with the same commit messages and changes. The original CI run [40185723032](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40185723032) passed both backend and frontend jobs on the same project tree. This history correction predates the current enhancement.
 
@@ -255,7 +272,7 @@ See [TDD_LOG.md](TDD_LOG.md) for red test commits, observed failing outcomes, im
 | From `frontend`: `pnpm build` | Passed; Vite transformed 1,592 modules; CSS 14.78 kB and JS 212.61 kB before gzip. |
 | `git diff --check` | Passed before feature commit. |
 
-The responsive browser audit uses deterministic API fixtures. It is not a physical-device check or a full screen-reader audit. PostgreSQL verification for the feature commit is recorded in run `40195184620`; run `40196438040` is the later verified branch-tip result on commit `5164d7d4b2141160b397e5079eff311388d94c48`, summarized at the top. Purchases are simulated inventory changes; no payment is processed.
+The responsive browser audit uses deterministic API fixtures. It is not a physical-device check or a full screen-reader audit. PostgreSQL verification for the feature commit is recorded in run `40195184620`; run `40196438040` on `5164d7d4b2141160b397e5079eff311388d94c48` was a later historical branch-tip result and is superseded by the newer run summarized at the top. Purchases are simulated inventory changes; no payment is processed.
 
 ### GitHub Actions verification
 
