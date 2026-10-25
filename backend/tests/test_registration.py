@@ -17,6 +17,17 @@ def test_registration_creates_an_account_without_returning_password():
     assert "password" not in response.json()
 
 
+def test_registration_never_grants_admin_from_email_configuration(monkeypatch):
+    monkeypatch.setenv("BOOTSTRAP_ADMIN_EMAIL", "admin@example.com")
+    response = client.post(
+        "/api/auth/register",
+        json={"email": "admin@example.com", "password": "Safe-Drive-2046"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["is_admin"] is False
+
+
 def test_registration_rejects_duplicate_email():
     email = f"buyer-{uuid4().hex}@example.com"
     payload = {"email": email, "password": "Safe-Drive-2046"}

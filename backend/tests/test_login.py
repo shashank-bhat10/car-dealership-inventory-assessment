@@ -34,10 +34,10 @@ def test_login_rejects_wrong_password_and_unknown_account():
     assert unknown_user.status_code == 401
 
 
-def test_login_identifies_bootstrap_administrator():
+def test_login_does_not_promote_a_registered_account_by_email():
     email = "admin@example.com"
     password = "Safe-Drive-2046"
     assert client.post("/api/auth/register", json={"email": email, "password": password}).status_code == 201
     response = client.post("/api/auth/login", data={"username": email, "password": password})
     assert response.status_code == 200
-    assert response.json()["is_admin"] is True
+    assert response.json()["is_admin"] is False
