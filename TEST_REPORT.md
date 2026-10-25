@@ -1,14 +1,14 @@
 # Test and verification report
 
-Run date: **2026-10-25** (local development session; Asia/Kolkata). These results are local observations, not GitHub Actions results.
+Run date: **2026-10-25** (local development session; Asia/Kolkata). Local observations and GitHub Actions results are reported separately.
 
-## Latest verified GitHub Actions run before this documentation update
+## Latest verified public branch-tip Actions run
 
-GitHub Actions run [40199975599](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40199975599) completed successfully on `submission/tdd-kata` at commit `52360a59b35fb5f835f0d928c9aaf19755c7efed`. The backend job passed Ruff, the complete backend suite (**53 passed**) and Alembic migration. The PostgreSQL job passed its configured API suite (**21 passed**) and Alembic migration. The frontend job passed `pnpm test`, `pnpm test:responsive`, `pnpm lint`, and `pnpm build`; the responsive step passed all four viewports. The backend and PostgreSQL test jobs each reported one upstream Starlette/AnyIO deprecation warning. GitHub also emitted runner Node.js 20 deprecation and action-tooling `DEP0040`/`DEP0169` warnings; PostgreSQL initialization emitted its local trust-authentication notice. No warnings were suppressed. The repository API confirms `submission/tdd-kata` is the public repository's default branch. Run `40199415043` on `cc26859d370c275afb1903b667c109ca10b658c8`, run `40198386347` on `4b1213c44be0dd0e299a3f10c28e129d8b2fed54`, run `40197852387` on `a4cdd4df39fdded670bdc08274d38733cb90740a`, and earlier successful runs are historical; they are superseded by `40199975599` at the time of this report update.
+GitHub Actions run [40205794146](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40205794146) completed successfully on exact commit `84f382ddf5a6cf4e19eb99d22584aa34187373f8` on default branch `submission/tdd-kata`. I queried the run and job APIs: `backend`, `postgres`, and `frontend` each concluded `success`. The PostgreSQL job therefore verified its API suite and migration against the PostgreSQL 16 service with the raw `postgres://` alias now configured. Run `40204530183` on `7513326daf8243eb4d97a41632bd3b08c2c9dd18` was the last successful run before this audit's changes and is now historical. Other older run IDs in this report are historical as well.
 
-## Final local verification (2026-10-25)
+## Historical local verification (2026-10-25)
 
-These commands were run on the clean `submission/tdd-kata` tip `4b1213c44be0dd0e299a3f10c28e129d8b2fed54`. The only subsequent changes for this audit are documentation corrections; no application code changed.
+The commands in the historical table were run on `4b1213c44be0dd0e299a3f10c28e129d8b2fed54`. Later published commits changed backend tests and migration configuration, so those local results are not current verification. The current audit's local commands and results are recorded in the section below.
 
 | Exact command | Observed result |
 | --- | --- |
@@ -21,7 +21,27 @@ These commands were run on the clean `submission/tdd-kata` tip `4b1213c44be0dd0e
 | From `frontend`: `pnpm build` | Passed; Vite transformed 1,592 modules; CSS 14.78 kB and JS 212.61 kB before gzip. |
 | `git diff --check` | Passed after the audit documentation corrections. |
 
-This is an automated browser and DOM accessibility check, not a full screen-reader or physical-device audit. PostgreSQL was verified by the PostgreSQL job in Actions run `40198386347`; no local PostgreSQL service was tested.
+This historical automated browser and DOM accessibility check was not a full screen-reader or physical-device audit. Local PostgreSQL was not tested.
+
+## Current audit local verification (2026-10-25)
+
+These checks ran in the clean temporary clone after test commit `16cba11253406c7125bff13d74139e16f3907a55` and against the same source/test/workflow content later committed as `84f382ddf5a6cf4e19eb99d22584aa34187373f8`. They are local results. The server-backed PostgreSQL result for that exact commit is the Actions run above.
+
+| Exact command | Observed result |
+| --- | --- |
+| From `backend`: `$env:PYTHONPATH='.'; & 'C:\Users\Shashank\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m pytest --cov=app --cov-report=term-missing` | **57 passed** in 55.70s; **95% coverage** (314 statements, 16 missed). One upstream Starlette/AnyIO `BlockingPortal` deprecation warning. |
+| From `backend`: `& 'C:\Users\Shashank\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m ruff check app tests` | All checks passed. |
+| From `backend`: `$env:PYTHONPATH='.'; & 'C:\Users\Shashank\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m pytest -q tests/test_migrations.py -k raw_postgresql` | **2 passed, 1 deselected**. Both raw PostgreSQL aliases generated PostgreSQL offline migration SQL through Alembic. This is regression coverage passing against the existing normalizer, not a new failing-test result. |
+| From `backend`: `$env:DATABASE_URL='sqlite:///C:/Users/Shashank/AppData/Local/Temp/car-dealership-audit-fresh-20261025.db'; $env:PYTHONPATH='.'; & 'C:\Users\Shashank\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m alembic -c alembic.ini upgrade head; & 'C:\Users\Shashank\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m alembic -c alembic.ini current` | Passed on a fresh SQLite file outside the repository; applied `0001_initial`, `0002_vehicle_constraints`, `0003_purchase_history`; current revision `0003_purchase_history (head)`. |
+| From `frontend`: `pnpm install --frozen-lockfile`; `pnpm test` | Install passed; **33 frontend tests passed**. |
+| From `frontend`: `pnpm test:responsive` | All checks passed at 320×640, 375×812, 768×1024, and 1440×900, including overflow, control usability, keyboard focus, and axe checks. |
+| From `frontend`: `pnpm lint` | Passed; no ESLint findings. |
+| From `frontend`: `pnpm build` | Passed; Vite transformed 1,592 modules; CSS 14.78 kB and JS 212.61 kB before gzip. |
+| `git diff --check` | Passed before this report edit; rerun after all documentation updates. |
+
+The responsive and axe checks are automated browser/DOM checks, not full screen-reader or physical-device audits. The local raw-URL regression cases use offline Alembic SQL; the PostgreSQL job in run `40205794146` separately verifies its actual online migration with raw `postgres://`.
+
+I checked all 12 screenshot links in `README.md`; every target exists. I visually inspected `screenshots/fullstack-customer-history.png` and `screenshots/fullstack-admin-history.png`: both show the saved Honda Civic purchase details and simulated-record labeling, with account-identifying text masked. Their full-stack provenance is supported by the capture procedure and local SQLite query recorded later in this report; the images alone are not treated as proof of the database flow.
 
 ## Delete focus-restoration regression test (2026-10-25)
 
@@ -246,7 +266,7 @@ The refactor-specific before/after test command and results are recorded in `TDD
 
 ## TDD evidence
 
-See [TDD_LOG.md](TDD_LOG.md) for red test commits, observed failing outcomes, implementation commits, passing reruns and the concurrency-test scope. Tests and test result commits precede the corresponding implementation commits throughout the recorded branch history.
+See [TDD_LOG.md](TDD_LOG.md) for red test commits, observed failing outcomes, implementation commits, passing reruns and the concurrency-test scope. The later Alembic URL wiring at `7513326` did not have a separately committed failing test; the new raw-alias test is recorded as a passing regression test against that existing behavior.
 
 ## Purchase history and confirmation changes (2026-10-25)
 

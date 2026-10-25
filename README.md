@@ -77,7 +77,7 @@ Configuration:
 | --- | --- | --- |
 | `ENVIRONMENT` | Set explicitly to `development` to permit the local fallback key. | Defaults to the secure non-development policy when unset; set to `production`. |
 | `SECRET_KEY` | Optional only when `ENVIRONMENT=development`; set your own value to keep local tokens stable. | Required. Use at least 32 characters with at least 12 distinct characters; known defaults and placeholder text are rejected. |
-| `DATABASE_URL` | Defaults to persistent `sqlite:///./inventory.db` (`backend/inventory.db`). | Set to the chosen SQLAlchemy database URL. PostgreSQL uses `postgresql+psycopg://user:password@localhost:5432/dealership`; GitHub Actions verifies this driver and migrations using a temporary PostgreSQL service. |
+| `DATABASE_URL` | Defaults to persistent `sqlite:///./inventory.db` (`backend/inventory.db`). | Set to the chosen SQLAlchemy database URL. Raw `postgres://` and `postgresql://` aliases are normalized to the installed psycopg v3 driver; GitHub Actions verifies raw-alias migration against a temporary PostgreSQL service. |
 | `FRONTEND_ORIGIN` | Defaults to `http://localhost:5173`; localhost and loopback Vite origins are also allowed. | Set to the deployed SPA origin. |
 | `VITE_API_URL` | Optional; empty uses the Vite `/api` proxy to `http://127.0.0.1:8000`. | Set the public API origin when the SPA and API are served separately. |
 

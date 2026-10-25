@@ -107,6 +107,19 @@ The merge commit `c80cabe` was replaced with `0775eb96557dca53ee488c2e092a8d2d5b
 
 The dialogs state that a purchase only reduces inventory and does not process payment. History is labelled as simulated inventory records. Automated axe and keyboard checks are not a full screen-reader audit; no full screen-reader audit was performed.
 
+## PostgreSQL Alembic URL normalization audit (2026-10-25)
+
+The public commit order and Actions evidence were checked against the reachable `submission/tdd-kata` history and GitHub run/job APIs:
+
+| Public evidence | Observed result |
+| --- | --- |
+| Test commit `ae9dd10` (`test: specify PostgreSQL psycopg URL handling`), then implementation commit `a7479ad` (`fix: select installed psycopg driver for Postgres URLs`) | The sequence is reachable in this order. Actions run [40204169861](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40204169861) on `ae9dd108a31ff57fedc5f208a04dd09df83654ed` failed in the backend job during collection because `normalize_database_url` was missing; PostgreSQL and frontend jobs succeeded. Run [40204224272](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40204224272) on `a7479ad787172a86c07283bf7395dc0794286066` completed successfully with backend, PostgreSQL, and frontend jobs all successful. |
+| Later Alembic wiring commit `7513326` | `backend/alembic/env.py` applies the normalizer in online and offline migration paths. This was not preceded by a separately committed red test, so no test-first claim is made for this change. |
+| Regression-test commit `16cba11253406c7125bff13d74139e16f3907a55` | Added offline Alembic migration tests for raw `postgres://` and `postgresql://...?sslmode=require`. Before implementation changes, `pytest -q tests/test_migrations.py -k raw_postgresql` reported **2 passed, 1 deselected**. Because the normalizer already existed, this was a passing regression check, not a red phase. |
+| Workflow commit `84f382ddf5a6cf4e19eb99d22584aa34187373f8` | PostgreSQL CI now sets raw `postgres://...`. Actions run [40205794146](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40205794146) passed on this exact commit; the `postgres` job succeeded, exercising the online alias path against PostgreSQL 16. |
+
+The audit's full local backend/frontend checks are listed in `TEST_REPORT.md`. No historical commit or result was changed or retrofitted.
+
 ## Delete focus-restoration regression check (2026-10-25)
 
 The branch already contained the behavior requested here: `ConfirmDialog` detects when its opener is disconnected and moves focus to `.page-content h1`, and the inventory heading has `tabIndex="-1"`. The new test in `8b05a2b` confirms deletion removes the opener and focus returns to that heading. It passed on the existing implementation (**1 passed, 32 skipped** in the focused run). No red result or implementation commit is claimed because no failing behavior was present to implement; the existing cancel, Escape, and focus-trap coverage remains in the suite.
