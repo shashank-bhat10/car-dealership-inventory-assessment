@@ -16,7 +16,7 @@ def test_offline_provisioning_creates_an_administrator():
         assert stored.password_hash.startswith("$argon2")
 
 
-def test_offline_provisioning_promotes_existing_account_without_replacing_password():
+def test_offline_provisioning_promotes_existing_account_with_supplied_password():
     from app.admin_cli import provision_admin
     from app.main import password_hash
 
@@ -33,4 +33,5 @@ def test_offline_provisioning_promotes_existing_account_without_replacing_passwo
 
         assert admin.id == customer.id
         assert admin.is_admin is True
-        assert password_hash.verify("Original-Drive-2046", admin.password_hash)
+        assert password_hash.verify("Replacement-Drive-2047", admin.password_hash)
+        assert not password_hash.verify("Original-Drive-2046", admin.password_hash)
