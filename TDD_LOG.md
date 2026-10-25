@@ -87,3 +87,11 @@ Every red result below was observed before the implementation commit for that be
 - Passing implementation result: pending.
 
 - Passing rerun before frontend account implementation commit: pnpm test — **4 passed**. pnpm lint — **passed**. pnpm build — **passed** (Vite transformed 1,579 modules). The first post-implementation test run exposed unsupported assertion matchers in the test file; assertions were rewritten using built-in DOM properties before the passing rerun.
+
+## Customer inventory dashboard
+
+- Red test: `loads protected inventory and renders vehicle details` in `frontend/src/App.test.jsx`
+- Command: `pnpm exec vitest run -t 'loads protected inventory'` (working directory `frontend`)
+- Observed result before dashboard implementation: **1 failed, 4 skipped**. The authenticated shell rendered no vehicle heading or inventory record.
+- Test-first commit: recorded by the commit containing this test.
+- Passing implementation result: pending.

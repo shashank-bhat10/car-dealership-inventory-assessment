@@ -66,3 +66,23 @@ describe("account access", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("Incorrect email or password");
   });
 });
+
+describe("inventory dashboard", () => {
+  it("loads protected inventory and renders vehicle details", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { id: 1, make: "Volvo", model: "XC60", category: "SUV", price: "48900.00", quantity: 4 },
+        ],
+      }),
+    );
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Volvo XC60" })).toBeTruthy();
+    expect(screen.getByText("$48,900")).toBeTruthy();
+    expect(screen.getByText("4 in stock")).toBeTruthy();
+  });
+});
