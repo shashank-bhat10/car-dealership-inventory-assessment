@@ -71,7 +71,7 @@ Vehicle input validates non-empty make/model/category, positive price, integer q
 
 ## Tests and evidence
 
-Run backend checks from `backend`: `pytest -q`, `ruff check app tests`, and `alembic upgrade head`. Run frontend checks from `frontend`: `pnpm test`, `pnpm lint`, `pnpm build`. Exact observed commands, results, warnings and currently unverified checks are in [TEST_REPORT.md](TEST_REPORT.md). Requirement evidence is mapped in [REQUIREMENTS_CHECKLIST.md](REQUIREMENTS_CHECKLIST.md). Actual test-first commit IDs and red/green outcomes are in [TDD_LOG.md](TDD_LOG.md).
+Run backend checks from `backend`: `$env:PYTHONPATH='.'; python -m pytest -q`, `ruff check app tests`, and `alembic upgrade head`. Run frontend checks from `frontend`: `pnpm test`, `pnpm lint`, `pnpm build`. Exact observed commands, results, warnings and currently unverified checks are in [TEST_REPORT.md](TEST_REPORT.md). Requirement evidence is mapped in [REQUIREMENTS_CHECKLIST.md](REQUIREMENTS_CHECKLIST.md). Actual test-first commit IDs and red/green outcomes are in [TDD_LOG.md](TDD_LOG.md).
 
 ## My AI Usage
 

@@ -34,7 +34,7 @@ Package-install warnings observed: deprecated `eslint@9.19.0` and transitive `wh
 
 ## CI and migration limitations
 
-The first push triggered GitHub Actions run [40179145568](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40179145568) on `ce37690`. Frontend job passed. Backend Ruff passed, then pytest collection failed with six errors because `httpx` was missing from development requirements; Alembic was skipped. Added pinned `httpx==0.28.1` and reran tests in a clean local virtual environment successfully. The branch push will trigger another GitHub Actions run; that run remains pending. Local fresh SQLite migration passed. PostgreSQL service availability was not established; PostgreSQL behavior remains unverified.
+GitHub Actions run [40179145568](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40179145568) on `ce37690`: frontend job passed; backend Ruff passed; backend pytest collection failed because `httpx` was missing; Alembic skipped. After pinning `httpx==0.28.1`, clean local `.venv` tests passed. GitHub Actions run [40179376846](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40179376846) on `591a679`: frontend job and backend Ruff passed; pytest collection failed again because the `app` package was not importable in the runner; Alembic skipped. Added job-level `PYTHONPATH: .`; the next CI run is pending. Local fresh SQLite migration passed. PostgreSQL service availability was not established; PostgreSQL behavior remains unverified.
 
 ## TDD evidence
 
