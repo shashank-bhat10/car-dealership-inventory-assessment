@@ -1,11 +1,13 @@
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
 
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  window.history.replaceState({}, "", "/");
   vi.unstubAllGlobals();
 });
 
@@ -140,7 +142,7 @@ describe("inventory dashboard", () => {
     render(<App />);
     const purchaseButton = await screen.findByRole("button", { name: "Purchase" });
 
-    fireEvent.click(purchaseButton);
+    await userEvent.setup().click(purchaseButton);
 
     const dialog = await screen.findByRole("alertdialog");
     expect(dialog.textContent).toContain("Volvo XC60");
@@ -160,11 +162,11 @@ describe("inventory dashboard", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<App />);
     const purchaseButton = await screen.findByRole("button", { name: "Purchase" });
-    fireEvent.click(purchaseButton);
+    await userEvent.setup().click(purchaseButton);
     const cancel = await screen.findByRole("button", { name: "Cancel" });
     const confirm = screen.getByRole("button", { name: "Confirm purchase" });
 
-    fireEvent.keyDown(document, { key: "Tab" });
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
     expect(document.activeElement).toBe(confirm);
     fireEvent.keyDown(document, { key: "Tab" });
     expect(document.activeElement).toBe(cancel);
@@ -255,6 +257,35 @@ describe("inventory dashboard", () => {
     expect(screen.getByText("buyer@example.com")).toBeTruthy();
     expect(screen.getByText("Simulated inventory records only. No payment is processed.")).toBeTruthy();
     expect(fetchMock.mock.calls[1][0]).toBe("/api/admin/purchases?limit=50&offset=0");
+  });
+
+  it("does not retain one account's purchase history after sign-out", async () => {
+    localStorage.setItem("access_token", "admin-token");
+    localStorage.setItem("is_admin", "true");
+    const record = {
+      id: 5, purchaser_id: 3, purchaser_email: "private-buyer@example.com", vehicle_id: 1,
+      make: "Volvo", model: "XC60", unit_price: "48900.00", purchased_at: "2026-10-25T10:00:00Z",
+    };
+    let finishCustomerHistory;
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response([]))
+      .mockResolvedValueOnce(response([record]))
+      .mockResolvedValueOnce(response({ access_token: "customer-token", is_admin: false }))
+      .mockResolvedValueOnce(response([]))
+      .mockImplementationOnce(() => new Promise((resolve) => { finishCustomerHistory = resolve; }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Purchase History" }));
+    expect(await screen.findByText("private-buyer@example.com")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "customer@example.com" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "Safe-Drive-2046" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.click(await screen.findByRole("button", { name: "My Purchases" }));
+
+    expect(screen.queryByText("Volvo XC60")).toBeNull();
+    finishCustomerHistory(response([]));
+    expect(await screen.findByRole("heading", { name: "No simulated purchases yet" })).toBeTruthy();
   });
 
   it("shows administrator inventory controls only to an administrator", async () => {
@@ -350,7 +381,7 @@ describe("inventory dashboard", () => {
     renderAdmin(fetchMock);
     await screen.findByRole("heading", { name: "Volvo XC60" });
     const deleteButton = screen.getByRole("button", { name: "Delete" });
-    fireEvent.click(deleteButton);
+    await userEvent.setup().click(deleteButton);
     expect(screen.getByRole("alertdialog")).toBeTruthy();
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
