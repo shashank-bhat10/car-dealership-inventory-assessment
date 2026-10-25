@@ -8,6 +8,12 @@ def test_production_requires_a_configured_jwt_secret():
         configured_secret_key("production", None)
 
 
+@pytest.mark.parametrize("environment", [None, "staging"])
+def test_unknown_or_missing_environment_fails_closed_without_a_secret(environment):
+    with pytest.raises(RuntimeError, match="SECRET_KEY is required"):
+        configured_secret_key(environment, None)
+
+
 @pytest.mark.parametrize(
     "secret",
     ["short", "development-key-change-me", "x" * 40, "replace-with-a-long-random-secret"],
