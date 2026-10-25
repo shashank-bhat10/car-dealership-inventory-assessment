@@ -40,21 +40,21 @@ Warnings in successful CI run: Starlette's `anyio.abc.BlockingPortal` deprecatio
 
 ## Final-audit local rerun (2026-10-25)
 
-Commands were run from the `backend` and `frontend` directories of branch `submission/tdd-kata` after the inventory retry change:
+Commands were run from the `backend` and `frontend` directories of branch `submission/tdd-kata` after the inventory retry and trailing-whitespace corrections:
 
 | Exact command | Observed result |
 | --- | --- |
-| `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest -q` | **19 passed**, 1 upstream Starlette/AnyIO `BlockingPortal` deprecation warning, 5.31s. |
+| `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest -q` | **19 passed**, 1 upstream Starlette/AnyIO `BlockingPortal` deprecation warning, 4.85s. |
 | `.\.venv\Scripts\python.exe -m ruff check app tests` | **All checks passed!** |
-| `$env:DATABASE_URL='sqlite:///./fresh-final-audit-20261025.db'; .\.venv\Scripts\python.exe -m alembic -c alembic.ini upgrade head` | **Passed**; applied `0001_initial` to a fresh SQLite file. PostgreSQL was not tested. |
-| `pnpm test` | **14 passed**, 1 test file, 1.81s. |
+| `$env:DATABASE_URL='sqlite:///./fresh-final-audit-20261025-final2.db'; .\.venv\Scripts\python.exe -m alembic -c alembic.ini upgrade head` | **Passed**; applied `0001_initial` to a fresh SQLite file. PostgreSQL was not tested. |
+| `pnpm test` | **14 passed**, 1 test file, 2.00s. |
 | `pnpm lint` | **Passed**, no findings. |
 | `pnpm build` | **Passed**, Vite transformed 1,579 modules; CSS 10.82 kB and JS 196.98 kB before gzip. |
 | `git diff --check` and `git diff --check main..HEAD` | **Passed** after removing extra trailing blank lines flagged in `backend/tests/test_admin.py` and `frontend/eslint.config.js`. |
 
 The final-audit test-first red run was `pnpm exec vitest run src/App.test.jsx`: **13 passed, 1 failed** at the new check that an inventory error must not display the empty state. After the error/retry implementation, the same command reported **14 passed**. The exact red and green commit pair is recorded in `TDD_LOG.md`. A later final branch-range diff check found two extra blank lines at EOF; they were removed, and the branch-range check was rerun. No PostgreSQL service test or screen-reader/device compatibility matrix was run.
 
-The latest completed run for the final-audit code and evidence commit at this point is [40180347110](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40180347110) on `c972e080709efe1d80c82f5c334effe52eb33e59`. It completed successfully: backend Ruff, pytest, and Alembic steps passed, and frontend test, lint, and production build steps passed. The immediately preceding checkpoint run `40179570241` on `fea340d32a758e95c9d01b8b184a6593d115a951` also passed both jobs. The report-only commit that records this run triggers a new workflow run; its outcome is reported separately after GitHub completes it.
+The final-audit code and evidence commit [4778a3f](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/commit/4778a3fdc81d932c87ef1201158de6ec8900846b) passed GitHub Actions run [40180578964](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40180578964): backend Ruff, pytest, and Alembic steps passed, and frontend test, lint, and production build steps passed. The preceding report commit `c972e08` passed run `40180347110`; the latest report-only commit at the time passed run `40180475589`. The checkpoint run `40179570241` on `fea340d32a758e95c9d01b8b184a6593d115a951` also passed both jobs. This report update triggers another workflow run; its result will be reported after it completes.
 
 ## TDD evidence
 

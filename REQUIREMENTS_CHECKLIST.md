@@ -21,7 +21,7 @@ Status reflects checks actually run in this build; evidence paths are repository
 | Responsive/accessibility/loading/empty/error states | `frontend/src/style.css`, semantic labels/roles and retry flow in `App.jsx`; loading, empty, error/retry tests in `App.test.jsx` | Partial (responsive CSS, labels, focus states, and states are implemented; no automated screen-reader or device matrix) |
 | SPA/API browser origin access | configurable `FRONTEND_ORIGIN` CORS middleware and `backend/tests/test_cors.py` | Verified |
 | Backend and frontend tests | test suites in `backend/tests` and `frontend/src` | Verified |
-| CI tests, lint and production build | `.github/workflows/ci.yml`, GitHub Actions run `40180347110` on `c972e080709efe1d80c82f5c334effe52eb33e59`; backend and frontend jobs passed | Verified |
+| CI tests, lint and production build | `.github/workflows/ci.yml`, GitHub Actions run `40180578964` on `4778a3fdc81d932c87ef1201158de6ec8900846b`; backend and frontend jobs passed | Verified |
 | Red–Green–Refactor commit evidence | `TDD_LOG.md`, actual branch history | Verified (test-first red/green commits and a separate lint-driven refactor; no unhelpful refactor commits were added) |
 | Screenshots from running application | `screenshots/customer-inventory.png`, `screenshots/admin-inventory.png` | Verified (captured from running local SPA/API with Playwright and visually inspected) |
 | Genuine prompt record | `PROMPTS.md` | Unverified (no unedited transcript export/build-only share link available) |
