@@ -194,7 +194,7 @@ def get_vehicle(
 def create_vehicle(
     data: VehicleRequest,
     session: Session = Depends(get_session),
-    _user: User = Depends(get_current_user),
+    _admin: User = Depends(require_admin),
 ):
     vehicle = Vehicle(**data.model_dump())
     session.add(vehicle)
@@ -208,7 +208,7 @@ def update_vehicle(
     vehicle_id: int,
     data: VehicleRequest,
     session: Session = Depends(get_session),
-    _user: User = Depends(get_current_user),
+    _admin: User = Depends(require_admin),
 ):
     vehicle = session.get(Vehicle, vehicle_id)
     if vehicle is None:
