@@ -19,3 +19,5 @@ def fresh_database():
     Base.metadata.create_all(engine)
     yield
     Base.metadata.drop_all(engine)
+
+os.environ['SECRET_KEY'] = 'test-secret-key-for-jwt-signing'

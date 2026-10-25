@@ -11,3 +11,11 @@ Every red result below was observed before the implementation commit for that be
 - Passing implementation result: pending.
 
 - Passing rerun before implementation commit: python -m pytest -q tests/test_registration.py — **4 passed, 1 upstream Starlette warning**.
+
+## JWT login
+
+- Red tests: `backend/tests/test_login.py`
+- Command: `python -m pytest -q tests/test_login.py` (working directory `backend`, `PYTHONPATH=.`)
+- Observed result before login implementation: **2 failed, 1 warning**. Both login scenarios received HTTP 404 because the endpoint was not implemented.
+- Test-first commit: recorded by the commit containing these tests.
+- Passing implementation result: pending.
