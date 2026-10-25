@@ -20,6 +20,6 @@ def fresh_database():
     yield
     Base.metadata.drop_all(engine)
 
-os.environ['SECRET_KEY'] = 'test-secret-key-for-jwt-signing'
+os.environ["ENVIRONMENT"] = "development"
+os.environ["SECRET_KEY"] = "test-secret-key-for-jwt-signing"
 
-os.environ['BOOTSTRAP_ADMIN_EMAIL'] = 'admin@example.com'

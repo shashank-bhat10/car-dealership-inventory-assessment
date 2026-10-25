@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_session
 from app.models import User, Vehicle
+from app.security import configured_secret_key
 
 app = FastAPI(title="Car Dealership Inventory API")
 frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
@@ -24,9 +25,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 password_hash = PasswordHash.recommended()
-SECRET_KEY = os.getenv("SECRET_KEY", "development-key-change-me")
-if os.getenv("ENVIRONMENT") == "production" and SECRET_KEY == "development-key-change-me":
-    raise RuntimeError("Set SECRET_KEY to a unique value in production")
+SECRET_KEY = configured_secret_key(os.getenv("ENVIRONMENT"), os.getenv("SECRET_KEY"))
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
@@ -120,11 +119,10 @@ def register_account(data: RegistrationRequest, session: Session = Depends(get_s
     email = str(data.email).lower()
     if session.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=409, detail="Email already registered")
-    admin_email = os.getenv("BOOTSTRAP_ADMIN_EMAIL", "").lower()
     user = User(
         email=email,
         password_hash=password_hash.hash(data.password),
-        is_admin=bool(admin_email and email == admin_email),
+        is_admin=False,
     )
     session.add(user)
     session.commit()
