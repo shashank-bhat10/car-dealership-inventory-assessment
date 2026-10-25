@@ -2,7 +2,24 @@
 
 Run date: **2026-10-25** (local development session; Asia/Kolkata). These results are local observations, not GitHub Actions results.
 
-## Final submission-readiness audit (2026-10-25)
+## Targeted admin-write authorization audit (2026-10-25)
+
+This targeted change follows the prior branch tip `ecb489a4fb3fd17d13f8d5ef7f938c6eb49f66f9`. The prior Actions run [40188886380](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40188886380) passed on that commit before admin-only create/update was introduced; it is historical for this change. Tests were committed before route implementation.
+
+| Exact command | Observed result |
+| --- | --- |
+| From `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest -q tests/test_admin.py tests/test_vehicles.py` on red test commit `4c6902e` | **2 failed, 17 passed**: customer vehicle creation returned 201 instead of 403; customer update returned 200 instead of 403. One upstream Starlette/AnyIO warning. |
+| Same focused command after implementation commit `15431d2` | **19 passed** in 3.86s; one upstream Starlette/AnyIO warning. |
+| From `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing` after purchase fixture correction `eff0cba` | **42 passed** in 28.69s; **94% coverage** (218 statements, 13 missed). One upstream Starlette `anyio.abc.BlockingPortal` deprecation warning. |
+| From `backend`: `.\.venv\Scripts\ruff.exe check app tests` | **All checks passed!** |
+| From `backend`: `$db=Join-Path $env:TEMP ('dealership-admin-write-final-' + [guid]::NewGuid().ToString('N') + '.db'); $env:DATABASE_URL='sqlite:///' + ($db -replace '\\','/'); .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head` | **Passed** on fresh SQLite database `C:\Users\Shashank\AppData\Local\Temp\dealership-admin-write-final-60852fed8f07407f860447bc1c471f9b.db`; both revisions applied. |
+| From `frontend`: `pnpm test` | **21 passed**, 1 Vitest file, 2.29s. |
+| From `frontend`: `pnpm lint` | **Passed**, ESLint reported no findings. |
+| From `frontend`: `pnpm build` | **Passed**; Vite transformed 1,590 modules; CSS 13.27 kB and JS 205.94 kB before gzip. |
+
+The first full backend run after the role change reported **2 failed, 40 passed** because purchase tests attempted to create inventory with customer credentials and then read an absent `id`. The test setup was corrected to create stock with an administrator and purchase as a customer; `pytest -q tests/test_purchases.py` then reported **2 passed**, and the subsequent complete backend run passed. Frontend source was not changed; the responsive/axe matrix was not rerun for this backend-only change. The final pushed commit's Actions result is reported in the completion record.
+
+## Historical final submission-readiness audit (2026-10-25)
 
 These checks were rerun on the clean local `submission/tdd-kata` branch at code commit `3b3bf4fc07372f79ea38ae62eb8a95e593604b59`; the following changes through `bc31b83ed89d0df818f8d01733932f5733465e49` updated audit documentation only. GitHub Actions passed all three jobs on that documentation commit in run [40188788798](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40188788798). GitHub reports `submission/tdd-kata` as the repository default branch; `main` remains unchanged.
 

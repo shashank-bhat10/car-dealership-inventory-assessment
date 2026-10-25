@@ -74,7 +74,7 @@ Vite proxies `/api` to `http://127.0.0.1:8000` during local development. To use 
 
 ## API overview
 
-Registration and login are public. Every vehicle and inventory route requires `Authorization: Bearer <token>`. Delete and restock additionally require an administrator.
+Registration and login are public. Every vehicle and inventory route requires `Authorization: Bearer <token>`. Listing, searching, viewing details, and purchasing are available to authenticated accounts. Creating, updating, deleting, and restocking vehicles require an administrator; the API enforces the same role restriction as the admin interface.
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
@@ -83,8 +83,8 @@ Registration and login are public. Every vehicle and inventory route requires `A
 | GET | `/api/vehicles` | Authenticated | List inventory; supports `make`, `model`, `category`, `min_price`, and `max_price` filters |
 | GET | `/api/vehicles/search` | Authenticated | Search inventory by `make`, `model`, `category`, `min_price`, and `max_price` |
 | GET | `/api/vehicles/{id}` | Authenticated | Fetch one vehicle for its shareable detail page; returns 404 when absent |
-| POST | `/api/vehicles` | Authenticated | Add vehicle |
-| PUT | `/api/vehicles/{id}` | Authenticated | Update vehicle |
+| POST | `/api/vehicles` | Admin | Add vehicle (403 for authenticated customers) |
+| PUT | `/api/vehicles/{id}` | Admin | Update vehicle (403 for authenticated customers) |
 | DELETE | `/api/vehicles/{id}` | Admin | Remove vehicle |
 | POST | `/api/vehicles/{id}/restock` | Admin | Add stock within the configured stock limit |
 | POST | `/api/vehicles/{id}/purchase` | Authenticated | Decrement one available unit safely |

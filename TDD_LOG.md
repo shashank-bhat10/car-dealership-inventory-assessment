@@ -1,5 +1,13 @@
 # TDD log
 
+## Admin-only vehicle creation and update (2026-10-25)
+
+| Behavior | Test-first evidence | Implementation and green evidence |
+| --- | --- | --- |
+| Regular customers cannot create or update inventory; admins can do both | `4116286` added permission tests and changed the delete/restock fixture to let an admin create inventory. `pytest -q tests/test_admin.py` produced **2 failed, 5 passed**: customer POST returned **201** instead of 403 and customer PUT returned **200** instead of 403 (one upstream Starlette/AnyIO warning). Test fixtures were then adjusted in `4c6902e`; `pytest -q tests/test_admin.py tests/test_vehicles.py` reproduced the same **2 failed, 17 passed** red result. | `15431d2` changes POST and PUT to the existing `require_admin` dependency. The same focused suite reported **19 passed**, with one upstream warning; Ruff passed. The full backend suite then reported **42 passed**, **94% coverage**, one upstream warning; Ruff and fresh SQLite Alembic migrations passed. Frontend tests (**21 passed**), lint, and production build also passed after the backend change. |
+
+The separate fixture adjustment in `eff0cba` provisions test inventory as admin while retaining a customer identity for purchase requests. This corrected two purchase-test setup failures exposed by the new role policy; `pytest -q tests/test_purchases.py` then reported **2 passed**. It does not change purchase authorization. The full backend green run was performed after this correction. Each test and implementation commit carries the established Codex co-author trailer.
+
 The red failures and green reruns listed here were observed during this branch's work on 2026-10-25. Commit IDs point to actual test-first and implementation commits. No database or test outcomes are inferred from code alone.
 
 | Behavior | Red test commit and observed result | Green implementation commit and observed result |
