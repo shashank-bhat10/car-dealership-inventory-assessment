@@ -4,7 +4,7 @@ import os
 from alembic import context
 from sqlalchemy import create_engine
 
-from app.database import Base
+from app.database import Base, normalize_database_url
 from app import models  # noqa: F401
 
 config = context.config
@@ -14,7 +14,9 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline():
-    url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    url = normalize_database_url(
+        os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    )
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -26,7 +28,9 @@ def run_migrations_offline():
 
 
 def run_migrations_online():
-    url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    url = normalize_database_url(
+        os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    )
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     connectable = create_engine(url, connect_args=connect_args)
     with connectable.connect() as connection:
