@@ -12,16 +12,20 @@ Captured from the running SPA during the Playwright viewport audit with determin
 - [Customer inventory](screenshots/customer-inventory.png)
 - [Customer inventory at 375×812](screenshots/customer-inventory-mobile.png)
 - [Administrator inventory](screenshots/admin-inventory.png)
+- [Vehicle details](screenshots/vehicle-details.png)
+- [Vehicle details at 375×812](screenshots/vehicle-details-mobile.png)
 
 ## Architecture
 
 - `backend/app`: FastAPI routes, SQLAlchemy models, validation, authentication and settings.
 - `backend/alembic`: versioned schema migrations.
 - `backend/tests`: API, permission, validation, stock and migration tests.
-- `frontend/src`: React SPA, accessible forms, inventory search and admin workflows.
-- `.github/workflows/ci.yml`: backend and frontend checks on pushes and pull requests.
+- `frontend/src/App.jsx`: authentication, route state and inventory orchestration.
+- `frontend/src/components`: focused authentication, inventory, vehicle card/details and admin form components.
+- `frontend/src/services/api.js`: shared bearer-token API client and error handling.
+- `.github/workflows/ci.yml`: backend, PostgreSQL, browser accessibility, frontend test, lint and production-build checks on pushes and pull requests.
 
-Purchases use a single conditional SQL `UPDATE` (`quantity > 0`) so competing requests cannot decrement below zero. Restock also uses a conditional update and stock ceiling. SQLite is the local default and satisfies the persistent-database requirement. PostgreSQL configuration is optional and has not been tested.
+Purchases use a single conditional SQL `UPDATE` (`quantity > 0`) so competing requests cannot decrement below zero. Restock also uses a conditional update and stock ceiling. SQLite is the local default and satisfies the persistent-database requirement. The workflow includes a PostgreSQL 16 service job for API/purchase tests and migrations; local PostgreSQL could not be authenticated in this environment.
 
 ## Run locally
 
@@ -52,7 +56,7 @@ Configuration:
 | --- | --- | --- |
 | `ENVIRONMENT` | Set explicitly to `development` to permit the local fallback key. | Defaults to the secure non-development policy when unset; set to `production`. |
 | `SECRET_KEY` | Optional only when `ENVIRONMENT=development`; set your own value to keep local tokens stable. | Required. Use at least 32 characters with at least 12 distinct characters; known defaults and placeholder text are rejected. |
-| `DATABASE_URL` | Defaults to persistent `sqlite:///./inventory.db` (`backend/inventory.db`). | Set to the chosen SQLAlchemy database URL. PostgreSQL uses `postgresql+psycopg://user:password@localhost:5432/dealership`; PostgreSQL was not tested. |
+| `DATABASE_URL` | Defaults to persistent `sqlite:///./inventory.db` (`backend/inventory.db`). | Set to the chosen SQLAlchemy database URL. PostgreSQL uses `postgresql+psycopg://user:password@localhost:5432/dealership`; GitHub Actions verifies this driver and migrations using a temporary PostgreSQL service. |
 | `FRONTEND_ORIGIN` | Defaults to `http://localhost:5173`; localhost and loopback Vite origins are also allowed. | Set to the deployed SPA origin. |
 | `VITE_API_URL` | Optional; empty uses the Vite `/api` proxy to `http://127.0.0.1:8000`. | Set the public API origin when the SPA and API are served separately. |
 
@@ -78,6 +82,7 @@ Registration and login are public. Every vehicle and inventory route requires `A
 | POST | `/api/auth/login` | Public | OAuth form login; returns JWT and role flag |
 | GET | `/api/vehicles` | Authenticated | List inventory; supports `make`, `model`, `category`, `min_price`, and `max_price` filters |
 | GET | `/api/vehicles/search` | Authenticated | Search inventory by `make`, `model`, `category`, `min_price`, and `max_price` |
+| GET | `/api/vehicles/{id}` | Authenticated | Fetch one vehicle for its shareable detail page; returns 404 when absent |
 | POST | `/api/vehicles` | Authenticated | Add vehicle |
 | PUT | `/api/vehicles/{id}` | Authenticated | Update vehicle |
 | DELETE | `/api/vehicles/{id}` | Admin | Remove vehicle |
@@ -88,7 +93,7 @@ Vehicle input validates non-empty make/model/category, positive price, integer q
 
 ## Tests and evidence
 
-Run backend checks from `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing`, `.\.venv\Scripts\ruff.exe check app tests`, and `$env:DATABASE_URL='sqlite:///./fresh-check.db'; .\.venv\Scripts\alembic.exe upgrade head`. Run frontend checks from `frontend`: `pnpm test`, `pnpm test:responsive`, `pnpm lint`, `pnpm build`. The repeatable Playwright audit starts Vite, checks sign-in/customer/admin screens at 320×640, 375×812, 768×1024, and 1440×900, exercises customer/admin flows, checks overflow, labeled controls, 24 CSS pixel minimum targets and visible keyboard focus, and runs axe-core WCAG 2.1 A/AA rules. `pnpm test:responsive -- --screenshots` also captures the desktop screens and 375×812 customer view linked above. The audit uses deterministic API fixtures and is not a live-backend integration run or a screen-reader audit. Install Chromium with `pnpm exec playwright install chromium` if needed. Exact observed commands, results, warnings and unverified checks are in [TEST_REPORT.md](TEST_REPORT.md). Requirement evidence is mapped in [REQUIREMENTS_CHECKLIST.md](REQUIREMENTS_CHECKLIST.md). Actual test-first commit IDs and red/green outcomes are in [TDD_LOG.md](TDD_LOG.md).
+Run backend checks from `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing`, `.\.venv\Scripts\ruff.exe check app tests`, and set a fresh SQLite `DATABASE_URL` before `.\.venv\Scripts\alembic.exe -c alembic.ini upgrade head`. Run frontend checks from `frontend`: `pnpm test`, `pnpm test:responsive -- --screenshots`, `pnpm lint`, `pnpm build`. The Playwright audit checks sign-in, customer inventory/detail, and administrator inventory/detail at 320×640, 375×812, 768×1024, and 1440×900. It checks overflow, named controls, minimum 24 CSS-pixel targets, visible focus, keyboard Enter navigation, detail-header spacing, and axe-core WCAG 2.1 A/AA rules. It exercises customer search/purchase/out-of-stock and administrator add/edit/restock/delete flows. The audit uses deterministic API fixtures; it is not a live-backend integration or physical-device test. No full screen-reader audit was performed. CI runs API/purchase tests and Alembic against a temporary PostgreSQL service. Install Chromium with `pnpm exec playwright install chromium` if needed. Exact commands, results, warnings and unverified checks are in [TEST_REPORT.md](TEST_REPORT.md). Requirement evidence is mapped in [REQUIREMENTS_CHECKLIST.md](REQUIREMENTS_CHECKLIST.md). Test-first commit IDs and red/green/refactor results are in [TDD_LOG.md](TDD_LOG.md).
 
 ## My AI Usage
 

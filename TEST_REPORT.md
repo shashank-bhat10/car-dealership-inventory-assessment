@@ -2,6 +2,24 @@
 
 Run date: **2026-10-25** (local development session; Asia/Kolkata). These results are local observations, not GitHub Actions results.
 
+## Latest verification: vehicle details, refactor, and database CI setup
+
+These are the latest local results for this enhancement, observed on 2026-10-25. Earlier sections below are historical results from prior commits and are not the current check totals.
+
+| Exact command | Observed result |
+| --- | --- |
+| `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing` (from `backend`) | **40 passed** in 28.21s; **94% coverage** (218 statements, 13 missed). One upstream Starlette `anyio.abc.BlockingPortal` deprecation warning. |
+| `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest -q tests/test_postgres_configuration.py` (from `backend`) | **1 passed** in 1.64s. This checks URL selection only and does not connect to PostgreSQL. |
+| `$env:PYTHONPATH='.'; .\.venv\Scripts\ruff.exe check app tests` (from `backend`) | **All checks passed!** |
+| `$file = Join-Path $env:TEMP ('dealership-fresh-' + [guid]::NewGuid().ToString('N') + '.db'); $env:DATABASE_URL = 'sqlite:///' + ($file -replace '\\','/'); .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head` (from `backend`) | **Passed** on fresh SQLite file `C:\Users\Shashank\AppData\Local\Temp\dealership-fresh-d344dbdc96a14dcbba59aa23295098b8.db`; applied `0001_initial` and `0002_vehicle_constraints`. |
+| `pnpm test` (from `frontend`) | **21 passed**, 1 Vitest file, 2.84s. |
+| `pnpm test:responsive -- --screenshots` (from `frontend`) | **20/20** combinations passed: sign-in, customer inventory/detail, admin inventory/detail at 320×640, 375×812, 768×1024 and 1440×900. No horizontal overflow, unlabeled controls, controls below 24 CSS pixels, hidden keyboard focus, detail-header crowding or axe WCAG 2.1 A/AA violations. The run exercised Enter-to-submit and keyboard Enter back navigation. Genuine desktop and mobile detail screenshots were captured with deterministic API fixtures. |
+| `pnpm lint` (from `frontend`) | **Passed**; ESLint reported no findings. |
+| `pnpm build` (from `frontend`) | **Passed**; Vite transformed 1,590 modules; CSS 13.27 kB and JS 205.94 kB before gzip. |
+| `git diff --check` | **Passed** on the working-tree changes before commit. |
+
+The localhost port 5432 accepted a TCP connection, but an unauthenticated psycopg connection to database `postgres` failed with `fe_sendauth: no password supplied`; no local PostgreSQL test or migration is claimed. The new GitHub Actions PostgreSQL job is the server-backed verification. The accessibility checks are automated browser/axe checks and do not include a full screen-reader or physical-device audit. Package installation emitted the existing deprecated `eslint@9.19.0` and transitive `whatwg-encoding@3.1.1` warnings; these were not suppressed.
+
 ## Backend
 
 Working directory: `backend`. Python command executable was the workspace runtime at `C:\Users\Shashank\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe`.
@@ -17,7 +35,7 @@ Working directory: `backend`. Python command executable was the workspace runtim
 
 An earlier bare system `python -m pytest` command failed because that interpreter did not have pytest installed. The successful runs above used the configured workspace Python runtime. The purchase concurrency test issued eight parallel requests against SQLite stock quantity 3 and observed three HTTP 200 and five HTTP 409 responses. This checks the atomic SQL condition in the local SQLite test setup; it does not establish production behavior for PostgreSQL, different isolation/driver configurations, or multi-node deployment.
 
-PostgreSQL support is optional and configured, but it was not verified in this run. SQLite satisfies the persistent-database requirement.
+This historical run predates the PostgreSQL CI job described in the latest verification section. SQLite satisfies the persistent-database requirement.
 
 ## Frontend
 
@@ -95,7 +113,7 @@ The backend review found no worthwhile refactor: the shared filter query is alre
 
 The ChatGPT prompt-planning share URL in `PROMPTS.md` was opened in a fresh headless Chromium context without stored sign-in state. It returned HTTP 200 and displayed the shared-conversation notice and conversation text. The Codex conversation link was previously confirmed by the user to open without signing in.
 
-The original merge commit `c80cabe5651c6204f35789325cc7adc046822aa8` was replaced by `0775eb96557dca53ee488c2e092a8d2d5bcf1028` to add `Co-authored-by: OpenAI Codex <ai@users.noreply.github.com>`. The replacement retains the original tree and parent order. Its four direct descendants were replayed with the same commit messages and changes. The original CI run [40185723032](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40185723032) passed both backend and frontend jobs on the same project tree; CI for the updated branch will be recorded after the push.
+The original merge commit `c80cabe5651c6204f35789325cc7adc046822aa8` was replaced by `0775eb96557dca53ee488c2e092a8d2d5bcf1028` to add `Co-authored-by: OpenAI Codex <ai@users.noreply.github.com>`. The replacement retains the original tree and parent order. Its four direct descendants were replayed with the same commit messages and changes. The original CI run [40185723032](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40185723032) passed both backend and frontend jobs on the same project tree. This history correction predates the current enhancement.
 
 ## Final checks after the authentication refactor (2026-10-25)
 
