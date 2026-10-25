@@ -2,9 +2,9 @@
 
 Run date: **2026-10-25** (local development session; Asia/Kolkata). Local observations and GitHub Actions results are reported separately.
 
-## Latest verified public branch-tip Actions run
+## Latest verified public branch-tip Actions run before this final evidence update
 
-GitHub Actions run [40205794146](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40205794146) completed successfully on exact commit `84f382ddf5a6cf4e19eb99d22584aa34187373f8` on default branch `submission/tdd-kata`. I queried the run and job APIs: `backend`, `postgres`, and `frontend` each concluded `success`. The PostgreSQL job therefore verified its API suite and migration against the PostgreSQL 16 service with the raw `postgres://` alias now configured. Run `40204530183` on `7513326daf8243eb4d97a41632bd3b08c2c9dd18` was the last successful run before this audit's changes and is now historical. Other older run IDs in this report are historical as well.
+GitHub Actions run [40206025417](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40206025417) completed successfully on exact commit `1664a736d07025d29bed22103bb80834f29df544` on default branch `submission/tdd-kata`. I queried the run and job APIs: `backend`, `postgres`, and `frontend` each concluded `success`. This commit only updates evidence documentation. The full source/test/workflow verification is run [40205794146](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40205794146), successful on `84f382ddf5a6cf4e19eb99d22584aa34187373f8`; its PostgreSQL job exercised the updated raw `postgres://` migration. Run `40204530183` on `7513326daf8243eb4d97a41632bd3b08c2c9dd18` was the last successful run before this audit's changes and is historical. Other older run IDs in this report are historical as well. The documentation update itself will also be checked by Actions on its resulting commit.
 
 ## Historical local verification (2026-10-25)
 
