@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
@@ -283,6 +283,41 @@ describe("inventory dashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     fireEvent.click(await screen.findByRole("button", { name: "My Purchases" }));
 
+    expect(screen.queryByText("Volvo XC60")).toBeNull();
+    finishCustomerHistory(response([]));
+    expect(await screen.findByRole("heading", { name: "No simulated purchases yet" })).toBeTruthy();
+  });
+
+  it("ignores a purchase-history response that finishes after sign-out", async () => {
+    localStorage.setItem("access_token", "admin-token");
+    localStorage.setItem("is_admin", "true");
+    const record = {
+      id: 5, purchaser_id: 3, purchaser_email: "private-buyer@example.com", vehicle_id: 1,
+      make: "Volvo", model: "XC60", unit_price: "48900.00", purchased_at: "2026-10-25T10:00:00Z",
+    };
+    let finishAdminHistory;
+    let finishCustomerHistory;
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response([]))
+      .mockImplementationOnce(() => new Promise((resolve) => { finishAdminHistory = resolve; }))
+      .mockResolvedValueOnce(response({ access_token: "customer-token", is_admin: false }))
+      .mockResolvedValueOnce(response([]))
+      .mockImplementationOnce(() => new Promise((resolve) => { finishCustomerHistory = resolve; }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Purchase History" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "customer@example.com" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "Safe-Drive-2046" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.click(await screen.findByRole("button", { name: "My Purchases" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
+
+    await act(async () => {
+      finishAdminHistory(response([record]));
+      await Promise.resolve();
+    });
     expect(screen.queryByText("Volvo XC60")).toBeNull();
     finishCustomerHistory(response([]));
     expect(await screen.findByRole("heading", { name: "No simulated purchases yet" })).toBeTruthy();
