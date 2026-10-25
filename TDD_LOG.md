@@ -29,3 +29,5 @@ Every red result below was observed before the implementation commit for that be
 - Observed result before endpoint implementation: **3 failed, 1 passed, 1 warning**. Missing list/create/search endpoints returned HTTP 404; the absent update endpoint test unexpectedly passed its expected 404. The warning was the same upstream Starlette deprecation.
 - Test-first commit: recorded by the commit containing these tests.
 - Passing implementation result: pending.
+
+- Passing rerun before vehicle implementation commit: python -m pytest -q tests/test_vehicles.py tests/test_login.py tests/test_registration.py — **10 passed, 1 upstream warning**.
