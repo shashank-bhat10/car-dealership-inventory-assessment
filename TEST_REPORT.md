@@ -70,7 +70,28 @@ These checks were run on the local `submission/tdd-kata` worktree after the sour
 | `pnpm build` | **Passed**, Vite transformed 1,579 modules; CSS 11.63 kB and JS 197.37 kB before gzip. |
 | `git diff --check` | **Passed**; Git printed only line-ending conversion notices for edited Markdown files. |
 
-The refreshed `screenshots/admin-inventory.png` and `screenshots/customer-inventory.png` were captured with Playwright from the running local SPA and API; both images were opened and visually inspected. GitHub Actions run [40183837168](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40183837168) completed successfully on commit `15b61226b46e42470ae89bd8c62ea209944c4cf7`; frontend and backend jobs both passed, including tests, lint, build, and migrations. This run includes all application, test, and screenshot changes. This report/checklist update is documentation-only. No PostgreSQL service test or screen-reader/device compatibility matrix was run.
+The earlier refresh of `screenshots/admin-inventory.png` and `screenshots/customer-inventory.png` was captured from the local SPA/API and visually inspected. GitHub Actions run [40183927021](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40183927021) passed on commit `e301f754760dff678c51c67601208e86354ef85c`; this predates the responsive audit and its new browser job. The responsive audit and its screenshots are reported below. No PostgreSQL service test or screen-reader/device compatibility matrix was run.
+
+## Responsive and accessibility audit (2026-10-25)
+
+The audit uses Playwright 1.64.1 and axe-core 4.14.0. It starts a local Vite server and mocks deterministic authentication and inventory API responses; it exercises the SPA controls, not the backend integration. The script is repeatable with `pnpm test:responsive` from `frontend`. Screenshot capture is enabled with `pnpm test:responsive -- --screenshots` and refreshes the three PNGs in `screenshots/` at 1440×900.
+
+| Exact command | Observed result |
+| --- | --- |
+| `pnpm test:responsive` before UI fixes; the failing audit is preserved in test commit `faf11ada215da3db47568baf98b235a183ea9f87` | Exit code 1; all 12 screen/viewport combinations ran and reported **35 findings**: horizontal overflow at narrow inventory widths, controls below 24 CSS pixels, axe-core color contrast violations, and a brand link accessible-name mismatch. |
+| `pnpm test:responsive` after UI fixes, on implementation commit `aa7913259888ade06ff3469f64f2a940a65320e8` | **Passed** all 12 combinations: sign-in, customer inventory, and admin inventory at 320×640, 375×812, 768×1024, and 1440×900. Checks found no horizontal overflow; input/button/link controls had names and at least 24×24 CSS-pixel targets; first keyboard Tab focus was visibly outlined; axe-core found no violations tagged WCAG 2.1 A/AA. The script completed customer search and purchase plus admin add/edit/restock/delete flows in each viewport. |
+| `pnpm test:responsive -- --screenshots` | **Passed** all 12 combinations and captured the refreshed sign-in, customer, and administrator screenshots at 1440×900. The images were opened and visually inspected. |
+| `pnpm test` | **15 passed**, 1 Vitest file, 2.49s. |
+| `pnpm lint` | **Passed** after extending ESLint's file match to include the Node `.mjs` audit script. An earlier run failed with 21 `no-undef` findings because `.mjs` did not match the configured JavaScript files. |
+| `pnpm build` | **Passed**; Vite transformed 1,579 modules; CSS 12.08 kB and JS 197.34 kB before gzip. |
+| `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing` | **37 passed** in 25.55s; **94% coverage** (210 statements, 12 missed); one upstream Starlette `anyio.abc.BlockingPortal` deprecation warning. |
+| `.\.venv\Scripts\ruff.exe check app tests` | **All checks passed!** |
+| `$env:DATABASE_URL='sqlite:///./final-responsive-audit-20261025.db'; .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head` | **Passed** on a fresh SQLite database; applied `0001_initial` and `0002_vehicle_constraints`. |
+| `git diff --check` | **Passed** after the final edits. |
+
+The colors and target sizes were adjusted based on the observed axe/viewport findings, the topbar now wraps at narrow widths, and the brand link relies on its visible text for its accessible name. The audit covers these browser states and viewport sizes only; it is not a full screen-reader audit or a physical-device compatibility test. The Browser audit package installation reported deprecated `eslint@9.19.0` and transitive `whatwg-encoding@3.1.1`; those warnings were left visible and were not changed as part of this task. The screenshots use deterministic mocked API responses and are labeled accordingly in the README.
+
+The backend review found no worthwhile refactor: the shared filter query is already extracted and conditional SQL updates already guard purchase/restock boundaries. No backend source or history was changed. The decision and evidence are recorded in `TDD_LOG.md`.
 
 ## TDD evidence
 

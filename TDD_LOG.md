@@ -45,3 +45,15 @@ After adding `httpx==0.28.1`, the declared dependencies were installed into a cl
 Coverage additions for independent filters, every protected vehicle route, and missing restock IDs are in `8aaf44f`; focused vehicle/admin tests reported **15 passed** with one upstream warning and Ruff passed. They exercise existing routes rather than claim new behavior. The route-test fixture was later simplified in `afd536c` so admin-only endpoint tests seed an administrator directly instead of relying on the provisioning feature under test; focused admin tests then reported **5 passed**, one upstream warning, and Ruff passed.
 
 Integrity note: the first JWT test drafts in `a60f6f6` and `a27709f` imported `app.security` before that helper existed in branch history. Those drafts are not counted as red evidence. They were replaced by startup-level subprocess tests in `734513c`, which were run against a clean parent checkout before `1b65305` implemented the policy. No commits were rewritten or backdated.
+
+## Responsive and accessibility browser audit (2026-10-25)
+
+| Behavior or evidence | Test-first commit and observed red result | Implementation commit and observed green result |
+| --- | --- | --- |
+| Sign-in, customer inventory, and administrator inventory at 320×640, 375×812, 768×1024, and 1440×900 | `faf11ad`; `pnpm test:responsive` completed all 12 screen/viewport cases and exited 1 with **35 findings**, including narrow-screen horizontal overflow, controls below 24 CSS pixels, axe-core contrast failures, and an accessible-name mismatch. | `aa79132`; the same `pnpm test:responsive` command completed all 12 cases and exited 0: no overflow, all tested controls labeled and at least 24 CSS pixels, keyboard focus visible on Tab, and no axe WCAG 2.1 A/AA violations. The customer search/purchase and administrator add/edit/restock/delete flows also completed in each viewport. |
+
+The audit found contrast deficiencies in muted text and category labels, undersized text controls, a brand link whose explicit accessible name did not include its visible text, and horizontal overflow in the mobile inventory header. The follow-up removed the misleading explicit link name, darkened the affected text colors, increased text-button target size, and stacked/wrapped the narrow topbar. ESLint initially rejected the new `.mjs` audit script because the config only matched `.js` and `.jsx`; adding `.mjs` to that existing Node/browser lint scope made `pnpm lint` pass. No automated screen-reader audit was run.
+
+## Backend refactor review (2026-10-25)
+
+The actual backend source and history were reviewed. `vehicle_statement` already keeps the shared list/search filter construction in one place; purchase and restock use conditional SQL updates to preserve stock boundaries. No backend refactor was warranted because the remaining route repetition is small and a structural change would not improve clarity or safety. No backend files or backend commit history were changed during this audit. The backend suite was rerun and passed **37 tests** with **94% coverage** and one upstream Starlette/AnyIO deprecation warning.
