@@ -17,7 +17,7 @@ Working directory: `backend`. Python command executable was the workspace runtim
 
 An earlier bare system `python -m pytest` command failed because that interpreter did not have pytest installed. The successful runs above used the configured workspace Python runtime. The purchase concurrency test issued eight parallel requests against SQLite stock quantity 3 and observed three HTTP 200 and five HTTP 409 responses. This checks the atomic SQL condition in the local SQLite test setup; it does not establish production behavior for PostgreSQL, different isolation/driver configurations, or multi-node deployment.
 
-PostgreSQL was not configured or verified in this run.
+PostgreSQL support is optional and configured, but it was not verified in this run. SQLite satisfies the persistent-database requirement.
 
 ## Frontend
 
@@ -54,7 +54,7 @@ Commands were run from the `backend` and `frontend` directories of branch `submi
 
 The final-audit test-first red run was `pnpm exec vitest run src/App.test.jsx`: **13 passed, 1 failed** at the new check that an inventory error must not display the empty state. After the error/retry implementation, the same command reported **14 passed**. The exact red and green commit pair is recorded in `TDD_LOG.md`. A later final branch-range diff check found two extra blank lines at EOF; they were removed, and the branch-range check was rerun. No PostgreSQL service test or screen-reader/device compatibility matrix was run.
 
-The final-audit code and evidence commit [4778a3f](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/commit/4778a3fdc81d932c87ef1201158de6ec8900846b) passed GitHub Actions run [40180578964](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40180578964): backend Ruff, pytest, and Alembic steps passed, and frontend test, lint, and production build steps passed. The preceding report commit `c972e08` passed run `40180347110`; the latest report-only commit at the time passed run `40180475589`. The checkpoint run `40179570241` on `fea340d32a758e95c9d01b8b184a6593d115a951` also passed both jobs. This report update triggers another workflow run; its result will be reported after it completes.
+Commit [`5e35b27a58e0b5c4cf129e92bce4df6acf50a737`](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/commit/5e35b27a58e0b5c4cf129e92bce4df6acf50a737) on `submission/tdd-kata` passed GitHub Actions run [40181495523](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40181495523), completed 2026-10-25. Both jobs succeeded: backend Ruff, pytest with coverage, and Alembic migration; frontend tests, lint, and production build. The final checklist cites this run. PostgreSQL was not tested.
 
 ## TDD evidence
 
