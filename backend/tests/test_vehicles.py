@@ -5,16 +5,18 @@ from fastapi.testclient import TestClient
 from sqlalchemy.exc import IntegrityError
 
 from app.database import SessionLocal
-from app.main import app
-from app.models import Vehicle
+from app.main import app, password_hash
+from app.models import User, Vehicle
 
 client = TestClient(app)
 
 
-def authenticated_headers():
+def admin_headers():
     email = f"buyer-{uuid4().hex}@example.com"
     password = "Safe-Drive-2046"
-    client.post("/api/auth/register", json={"email": email, "password": password})
+    with SessionLocal() as session:
+        session.add(User(email=email, password_hash=password_hash.hash(password), is_admin=True))
+        session.commit()
     token = client.post(
         "/api/auth/login", data={"username": email, "password": password}
     ).json()["access_token"]
@@ -30,7 +32,7 @@ def payload(**overrides):
 def test_vehicle_list_create_search_and_update_require_authentication():
     unauthenticated = client.get("/api/vehicles")
     assert unauthenticated.status_code == 401
-    headers = authenticated_headers()
+    headers = admin_headers()
     created = client.post("/api/vehicles", json=payload(), headers=headers)
     assert created.status_code == 201
     assert created.json()["id"] > 0
@@ -61,7 +63,7 @@ def test_every_protected_vehicle_route_rejects_anonymous_requests():
 
 
 def test_vehicle_search_applies_make_model_category_and_price_bounds():
-    headers = authenticated_headers()
+    headers = admin_headers()
     client.post("/api/vehicles", json=payload(make="Toyota", model="Corolla", price="22000"), headers=headers)
     client.post("/api/vehicles", json=payload(make="Honda", model="Civic", category="Hatchback", price="18000"), headers=headers)
     client.post("/api/vehicles", json=payload(make="Toyota", model="RAV4", category="SUV", price="36000"), headers=headers)
@@ -77,7 +79,7 @@ def test_vehicle_search_applies_make_model_category_and_price_bounds():
 
 
 def test_vehicle_search_supports_each_filter_independently():
-    headers = authenticated_headers()
+    headers = admin_headers()
     client.post("/api/vehicles", json=payload(make="Toyota", model="Corolla", price="22000"), headers=headers)
     client.post("/api/vehicles", json=payload(make="Honda", model="Civic", category="Hatchback", price="18000"), headers=headers)
     client.post("/api/vehicles", json=payload(make="Toyota", model="RAV4", category="SUV", price="36000"), headers=headers)
@@ -95,7 +97,7 @@ def test_vehicle_search_supports_each_filter_independently():
 
 
 def test_vehicle_input_rejects_blank_text_invalid_price_and_negative_quantity():
-    headers = authenticated_headers()
+    headers = admin_headers()
     for invalid in (
         payload(make=" "),
         payload(model=""),
@@ -112,12 +114,12 @@ def test_vehicle_input_rejects_blank_text_invalid_price_and_negative_quantity():
 
 
 def test_vehicle_update_reports_missing_id():
-    headers = authenticated_headers()
+    headers = admin_headers()
     assert client.put("/api/vehicles/888", json=payload(), headers=headers).status_code == 404
 
 
 def test_get_vehicle_requires_authentication_and_returns_complete_vehicle():
-    headers = authenticated_headers()
+    headers = admin_headers()
     created = client.post("/api/vehicles", json=payload(), headers=headers)
     vehicle_id = created.json()["id"]
 
@@ -129,7 +131,7 @@ def test_get_vehicle_requires_authentication_and_returns_complete_vehicle():
 
 
 def test_get_vehicle_reports_missing_vehicle():
-    response = client.get("/api/vehicles/999999", headers=authenticated_headers())
+    response = client.get("/api/vehicles/999999", headers=admin_headers())
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Vehicle not found"
