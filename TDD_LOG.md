@@ -18,6 +18,9 @@ Every red result below was observed before the implementation commit for that be
 - Test-first commit: recorded by the commit containing these tests.
 - Passing implementation result: pending.
 
+- Passing rerun: `pnpm exec vitest run -t 'searches vehicles|prevents a customer purchase'` — **2 passed, 5 skipped**; `pnpm lint` and `pnpm build` passed.
+- Admin controls rerun: `pnpm test` — **7 passed, 1 failed**. The register/login UI now correctly triggered a third protected inventory request; the old test expectation of two calls was stale. The assertion was updated to verify the bearer header and three calls before committing the app.
+
 ## Administrator inventory controls
 
 - Red test: admin-only dashboard controls in `frontend/src/App.test.jsx`.

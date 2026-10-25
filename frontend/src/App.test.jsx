@@ -46,7 +46,8 @@ describe("account access", () => {
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
 
     await waitFor(() => expect(localStorage.getItem("access_token")).toBe("signed-token"));
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    expect(fetchMock.mock.calls[2][1].headers.get("Authorization")).toBe("Bearer signed-token");
   });
 
   it("shows a useful error when login is rejected", async () => {
