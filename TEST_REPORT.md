@@ -2,9 +2,27 @@
 
 Run date: **2026-10-25** (local development session; Asia/Kolkata). These results are local observations, not GitHub Actions results.
 
-## Latest verification: vehicle details, refactor, and database CI setup
+## Final submission-readiness audit (2026-10-25)
 
-These are the latest local results for this enhancement, observed on 2026-10-25. Earlier sections below are historical results from prior commits and are not the current check totals.
+These checks were rerun on the clean local `submission/tdd-kata` branch at `3b3bf4fc07372f79ea38ae62eb8a95e593604b59`. The remote branch points to the same commit. GitHub reports `submission/tdd-kata` as the repository default branch; `main` remains unchanged.
+
+| Exact command | Observed result |
+| --- | --- |
+| From `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing` | **40 passed** in 28.50s; **94% coverage** (218 statements, 13 missed). One upstream Starlette `anyio.abc.BlockingPortal` deprecation warning. |
+| From `backend`: `\.venv\Scripts\ruff.exe check app tests` | **All checks passed!** |
+| From `backend`: `$db=Join-Path $env:TEMP ('dealership-final-' + [guid]::NewGuid().ToString('N') + '.db'); $env:DATABASE_URL='sqlite:///' + ($db -replace '\\','/'); .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head` | **Passed** on fresh database `C:\Users\Shashank\AppData\Local\Temp\dealership-final-200a84705daa43079ebd4c5f5f4ccd02.db`; revisions `0001_initial` and `0002_vehicle_constraints` applied. |
+| From `frontend`: `pnpm test` | **21 passed**, 1 Vitest file, 2.57s. |
+| From `frontend`: `pnpm test:responsive -- --screenshots` | **20/20** screen/viewport combinations passed for sign-in, customer inventory/details, and admin inventory/details at 320×640, 375×812, 768×1024, and 1440×900. No overflow, control-label/target, visible-focus, or axe-core WCAG 2.1 A/AA findings. Refreshed screenshots. |
+| From `frontend`: `pnpm lint` | **Passed**, ESLint reported no findings. |
+| From `frontend`: `pnpm build` | **Passed**; Vite transformed 1,590 modules; CSS 13.27 kB and JS 205.94 kB before gzip. |
+| `git diff --check` | **Passed** after the documentation update. |
+| GitHub Actions [run 40188353690](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40188353690) | **Completed successfully** for exact branch tip `3b3bf4fc07372f79ea38ae62eb8a95e593604b59`: backend, PostgreSQL, and frontend jobs all succeeded. The PostgreSQL job ran vehicle/purchase/configuration tests and both Alembic revisions against its PostgreSQL 16 service. |
+
+The local PostgreSQL service is not authenticated in this environment; server-backed PostgreSQL verification is from the GitHub Actions job above. The automated accessibility checks do not constitute a screen-reader audit or physical-device test. The only local test warning was the upstream Starlette/AnyIO deprecation noted above.
+
+## Historical local verification: vehicle details, refactor, and database CI setup
+
+These are local results for this enhancement, observed on 2026-10-25. The final submission-readiness rerun above supersedes these totals.
 
 | Exact command | Observed result |
 | --- | --- |
@@ -20,7 +38,7 @@ These are the latest local results for this enhancement, observed on 2026-10-25.
 
 The localhost port 5432 accepted a TCP connection, but an unauthenticated psycopg connection to database `postgres` failed with `fe_sendauth: no password supplied`; no local PostgreSQL test or migration is claimed. The new GitHub Actions PostgreSQL job is the server-backed verification. The accessibility checks are automated browser/axe checks and do not include a full screen-reader or physical-device audit. Package installation emitted the existing deprecated `eslint@9.19.0` and transitive `whatwg-encoding@3.1.1` warnings; these were not suppressed.
 
-GitHub Actions run [40188152132](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40188152132) for commit `1a7ad529e1ce9f655efef47305dade1268c2f94d` completed successfully. Backend, PostgreSQL, and frontend jobs all passed. The PostgreSQL job ran `pytest -q tests/test_postgres_configuration.py tests/test_vehicles.py tests/test_purchases.py` (**15 passed**, one upstream Starlette/AnyIO warning), then `alembic upgrade head`; logs confirm `PostgresqlImpl` and revisions `0001_initial` and `0002_vehicle_constraints`. The frontend job passed `pnpm test`, `pnpm test:responsive`, `pnpm lint`, and `pnpm build`; backend Ruff, pytest, and Alembic passed. CI warnings observed: upstream Starlette/AnyIO deprecation; runner warning that Node.js 20 action runtimes are deprecated for checkout/setup actions; Node `DEP0040` (`punycode`) and `DEP0169` (`url.parse`) action-tooling deprecations; and PostgreSQL `initdb`'s trust-authentication warning for its temporary local service. Database constraint-error log lines were expected from tests that verify invalid rows are rejected. The report-only follow-up commit receives its own CI run; the final branch-tip status is reported at completion.
+GitHub Actions run [40188152132](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40188152132) for commit `1a7ad529e1ce9f655efef47305dade1268c2f94d` completed successfully. Backend, PostgreSQL, and frontend jobs all passed. The PostgreSQL job ran `pytest -q tests/test_postgres_configuration.py tests/test_vehicles.py tests/test_purchases.py` (**15 passed**, one upstream Starlette/AnyIO warning), then `alembic upgrade head`; logs confirm `PostgresqlImpl` and revisions `0001_initial` and `0002_vehicle_constraints`. The frontend job passed `pnpm test`, `pnpm test:responsive`, `pnpm lint`, and `pnpm build`; backend Ruff, pytest, and Alembic passed. CI warnings observed: upstream Starlette/AnyIO deprecation; runner warning that Node.js 20 action runtimes are deprecated for checkout/setup actions; Node `DEP0040` (`punycode`) and `DEP0169` (`url.parse`) action-tooling deprecations; and PostgreSQL `initdb`'s trust-authentication warning for its temporary local service. Database constraint-error log lines were expected from tests that verify invalid rows are rejected. This historical run is superseded by the final branch-tip run documented above.
 
 ## Backend
 
