@@ -133,6 +133,109 @@ describe("inventory dashboard", () => {
     expect(screen.getByRole("button", { name: "Out of stock" }).hasAttribute("disabled")).toBe(true);
   });
 
+  it("cancels a purchase confirmation without calling the purchase API and restores focus", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    const fetchMock = vi.fn().mockResolvedValue(response([vehicle]));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    const purchaseButton = await screen.findByRole("button", { name: "Purchase" });
+
+    fireEvent.click(purchaseButton);
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog.textContent).toContain("Volvo XC60");
+    expect(dialog.textContent).toContain("$48,900");
+    expect(dialog.textContent).toContain("does not process payment");
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(purchaseButton);
+  });
+
+  it("confirms one purchase at a time and disables duplicate submission while pending", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    let finishPurchase;
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response([vehicle]))
+      .mockImplementationOnce(() => new Promise((resolve) => { finishPurchase = resolve; }))
+      .mockResolvedValueOnce(response([{ ...vehicle, quantity: 1 }]));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Purchase" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Confirm purchase" }));
+
+    const confirmButton = screen.getByRole("button", { name: "Processing purchase…" });
+    expect(confirmButton.disabled).toBe(true);
+    fireEvent.click(confirmButton);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/vehicles/1/purchase");
+    finishPurchase(response({ ...vehicle, quantity: 1 }));
+
+    expect(await screen.findByText("1 in stock")).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("shows purchase API errors inside the confirmation and permits a retry", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response([vehicle]))
+      .mockResolvedValueOnce(response({ detail: "Vehicle is out of stock" }, false));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Purchase" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Confirm purchase" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain("Vehicle is out of stock");
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("opens the customer's own simulated purchase history", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    const record = {
+      id: 4, purchaser_id: 2, purchaser_email: "customer@example.com", vehicle_id: null,
+      make: "Volvo", model: "XC60", unit_price: "48900.00", purchased_at: "2026-10-25T10:00:00Z",
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response([vehicle]))
+      .mockResolvedValueOnce(response([record]));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "My Purchases" }));
+
+    expect(await screen.findByRole("heading", { name: "My Purchases" })).toBeTruthy();
+    expect(screen.getByText("Simulated inventory records only. No payment is processed.")).toBeTruthy();
+    expect(screen.getByText("Volvo XC60")).toBeTruthy();
+    expect(screen.getByText("$48,900.00")).toBeTruthy();
+    expect(screen.getByText("Vehicle listing deleted; saved purchase details remain.")).toBeTruthy();
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/purchases?limit=50&offset=0");
+    expect(fetchMock.mock.calls[1][1].headers.get("Authorization")).toBe("Bearer customer-token");
+  });
+
+  it("opens all simulated purchase history for an administrator only", async () => {
+    localStorage.setItem("access_token", "admin-token");
+    localStorage.setItem("is_admin", "true");
+    const record = {
+      id: 5, purchaser_id: 3, purchaser_email: "buyer@example.com", vehicle_id: 1,
+      make: "Volvo", model: "XC60", unit_price: "48900.00", purchased_at: "2026-10-25T10:00:00Z",
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response([vehicle]))
+      .mockResolvedValueOnce(response([record]));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Purchase History" }));
+
+    expect(await screen.findByRole("heading", { name: "Purchase History" })).toBeTruthy();
+    expect(screen.getByText("buyer@example.com")).toBeTruthy();
+    expect(screen.getByText("Simulated inventory records only. No payment is processed.")).toBeTruthy();
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/admin/purchases?limit=50&offset=0");
+  });
+
   it("shows administrator inventory controls only to an administrator", async () => {
     localStorage.setItem("access_token", "admin-token");
     localStorage.setItem("is_admin", "true");
@@ -208,11 +311,51 @@ describe("inventory dashboard", () => {
     await screen.findByRole("heading", { name: "Volvo XC60" });
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog.textContent).toContain("Volvo XC60");
+    expect(dialog.textContent).toContain("cannot be undone from the UI");
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete vehicle" }));
+
     expect(await screen.findByRole("heading", { name: "No vehicles found" })).toBeTruthy();
     expect(screen.getByRole("status").textContent).toBe("Vehicle deleted.");
     expect(fetchMock.mock.calls[1][0]).toBe("/api/vehicles/1");
     expect(fetchMock.mock.calls[1][1].method).toBe("DELETE");
     expect(fetchMock.mock.calls[1][1].headers.get("Authorization")).toBe("Bearer admin-token");
+  });
+
+  it("cancels delete without an API request and returns focus to the opener", async () => {
+    const fetchMock = adminFetchMock([vehicle], {}, []);
+    renderAdmin(fetchMock);
+    await screen.findByRole("heading", { name: "Volvo XC60" });
+    const deleteButton = screen.getByRole("button", { name: "Delete" });
+    fireEvent.click(deleteButton);
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(deleteButton);
+  });
+
+  it("prevents duplicate delete requests while confirmation is pending", async () => {
+    let finishDelete;
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response([vehicle]))
+      .mockImplementationOnce(() => new Promise((resolve) => { finishDelete = resolve; }))
+      .mockResolvedValueOnce(response([]));
+    renderAdmin(fetchMock);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+    const confirm = await screen.findByRole("button", { name: "Delete vehicle" });
+    fireEvent.click(confirm);
+    expect(screen.getByRole("button", { name: "Deleting…" }).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Deleting…" }));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    finishDelete({ ok: true, json: async () => ({}) });
+
+    expect(await screen.findByRole("heading", { name: "No vehicles found" })).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("submits a restock request and renders the updated stock", async () => {

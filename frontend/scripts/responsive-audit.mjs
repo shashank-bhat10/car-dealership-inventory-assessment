@@ -223,12 +223,18 @@ async function runViewport(viewport) {
   await page.getByLabel("Make").fill("Volvo");
   await page.getByRole("button", { name: "Search inventory" }).click();
   await page.getByRole("button", { name: "Purchase" }).click();
+  const purchaseDialog = page.getByRole("alertdialog");
+  await purchaseDialog.waitFor({ state: "visible" });
+  if (!(await purchaseDialog.innerText()).includes("does not process payment")) recordFailure(viewport, "customer inventory", "purchase confirmation omitted the simulated-purchase notice");
+  await page.getByRole("button", { name: "Confirm purchase" }).click();
   await page.getByText("1 in stock").waitFor();
   await page.getByRole("link", { name: "Volvo XC60" }).click();
   await page.getByRole("heading", { name: "Volvo XC60" }).waitFor();
   await page.getByText("Vehicle ID").waitFor();
   await auditScreen(page, viewport, "vehicle details", "vehicle-details.png");
   await page.getByRole("button", { name: "Purchase" }).click();
+  await page.getByRole("alertdialog").waitFor({ state: "visible" });
+  await page.getByRole("button", { name: "Confirm purchase" }).click();
   await page.getByRole("button", { name: "Out of stock" }).waitFor({ state: "visible" });
   if (!(await page.getByRole("button", { name: "Out of stock" }).isDisabled())) recordFailure(viewport, "vehicle details", "zero-stock purchase button is enabled");
   await page.getByRole("link", { name: /back to inventory/i }).focus();
@@ -258,6 +264,8 @@ async function runViewport(viewport) {
   await page.getByRole("button", { name: "Restock" }).click();
   await page.getByText("5 in stock").waitFor();
   await page.getByRole("button", { name: "Delete" }).click();
+  await page.getByRole("alertdialog").waitFor({ state: "visible" });
+  await page.getByRole("button", { name: "Delete vehicle" }).click();
   await page.getByRole("heading", { name: "Honda Civic Touring" }).waitFor({ state: "detached" });
 
   console.log(`PASS ${viewport.width}x${viewport.height}: sign-in, customer inventory/details, and admin inventory/details`);
