@@ -77,3 +77,11 @@ Every red result below was observed before the implementation commit for that be
 - Observed result against the empty React screen: **2 failed**. The sign-in label and registration switch button were absent.
 - Test-first commit: recorded by the commit containing these tests.
 - Passing implementation result: pending.
+
+### Registration and login UI flow
+
+- Tests: `frontend/src/App.test.jsx` covers successful register-then-login token storage and rejected-login feedback.
+- Command: `pnpm test` (working directory `frontend`)
+- Observed result before the account UI implementation: **4 failed**. The empty app lacked the account controls, so registration and error-state interactions could not proceed.
+- Test-first commit: recorded by the commit containing these added tests.
+- Passing implementation result: pending.

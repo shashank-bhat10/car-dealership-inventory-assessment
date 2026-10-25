@@ -1,6 +1,6 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
 
 afterEach(cleanup);
@@ -20,5 +20,45 @@ describe("account access", () => {
     expect(screen.getByLabelText("Email address")).toBeTruthy();
     expect(screen.getByLabelText("Password").getAttribute("minlength")).toBe("10");
     expect(screen.getByRole("button", { name: /create account/i })).toBeTruthy();
+  });
+
+  it("registers, logs in, and stores the returned bearer token", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 1, email: "new@example.com" }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: "signed-token", token_type: "bearer" }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: "new@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "Safe-Drive-2046" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => expect(localStorage.getItem("access_token")).toBe("signed-token"));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows a useful error when login is rejected", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({ detail: "Incorrect email or password" }),
+      }),
+    );
+    render(<App />);
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: "member@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "incorrect" } });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Incorrect email or password");
   });
 });
