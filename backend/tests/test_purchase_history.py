@@ -4,8 +4,6 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 from sqlalchemy import event
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.engine import Engine
-
 from app.database import SessionLocal, engine
 from app.main import app, password_hash
 from app.models import User

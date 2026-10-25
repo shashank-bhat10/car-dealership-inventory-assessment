@@ -6,13 +6,14 @@ import jwt
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_serializer, field_validator
 from pwdlib import PasswordHash
 from sqlalchemy import select, update
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database import get_session
-from app.models import User, Vehicle
+from app.models import Purchase, User, Vehicle
 from app.security import configured_secret_key
 
 app = FastAPI(title="Car Dealership Inventory API")
@@ -58,6 +59,23 @@ class VehicleResponse(VehicleRequest):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+
+
+class PurchaseResponse(BaseModel):
+    id: int
+    purchaser_id: int
+    purchaser_email: str
+    vehicle_id: int | None
+    make: str
+    model: str
+    unit_price: Decimal
+    purchased_at: datetime
+
+    @field_serializer("purchased_at")
+    def serialize_utc_timestamp(self, value: datetime) -> str:
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def create_access_token(user: User) -> str:
@@ -229,6 +247,9 @@ def delete_vehicle(
     vehicle = session.get(Vehicle, vehicle_id)
     if vehicle is None:
         raise HTTPException(status_code=404, detail="Vehicle not found")
+    session.execute(
+        update(Purchase).where(Purchase.vehicle_id == vehicle_id).values(vehicle_id=None)
+    )
     session.delete(vehicle)
     session.commit()
 
@@ -266,10 +287,74 @@ def purchase_vehicle(
         update(Vehicle)
         .where(Vehicle.id == vehicle_id, Vehicle.quantity > 0)
         .values(quantity=Vehicle.quantity - 1)
+        .returning(Vehicle.id, Vehicle.make, Vehicle.model, Vehicle.price)
     )
-    if result.rowcount == 0:
+    vehicle_snapshot = result.one_or_none()
+    if vehicle_snapshot is None:
         if session.get(Vehicle, vehicle_id) is None:
             raise HTTPException(status_code=404, detail="Vehicle not found")
         raise HTTPException(status_code=409, detail="Vehicle is out of stock")
-    session.commit()
+
+    session.add(
+        Purchase(
+            purchaser_id=_user.id,
+            vehicle_id=vehicle_snapshot.id,
+            make=vehicle_snapshot.make,
+            model=vehicle_snapshot.model,
+            unit_price=vehicle_snapshot.price,
+            purchased_at=datetime.now(timezone.utc),
+        )
+    )
+    try:
+        session.commit()
+    except SQLAlchemyError:
+        session.rollback()
+        raise HTTPException(status_code=500, detail="Could not record the inventory purchase") from None
     return session.get(Vehicle, vehicle_id)
+
+
+def purchase_history_statement(limit: int, offset: int):
+    return (
+        select(Purchase, User.email.label("purchaser_email"))
+        .join(User, User.id == Purchase.purchaser_id)
+        .order_by(Purchase.purchased_at.desc(), Purchase.id.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+
+
+def serialize_purchase(record: Purchase, purchaser_email: str) -> dict:
+    return {
+        "id": record.id,
+        "purchaser_id": record.purchaser_id,
+        "purchaser_email": purchaser_email,
+        "vehicle_id": record.vehicle_id,
+        "make": record.make,
+        "model": record.model,
+        "unit_price": record.unit_price,
+        "purchased_at": record.purchased_at,
+    }
+
+
+@app.get("/api/purchases", response_model=list[PurchaseResponse])
+def list_my_purchases(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=10000),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    statement = purchase_history_statement(limit, offset).where(
+        Purchase.purchaser_id == current_user.id
+    )
+    return [serialize_purchase(record, email) for record, email in session.execute(statement)]
+
+
+@app.get("/api/admin/purchases", response_model=list[PurchaseResponse])
+def list_all_purchases(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=10000),
+    session: Session = Depends(get_session),
+    _admin: User = Depends(require_admin),
+):
+    statement = purchase_history_statement(limit, offset)
+    return [serialize_purchase(record, email) for record, email in session.execute(statement)]
