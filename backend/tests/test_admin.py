@@ -77,4 +77,3 @@ def test_restock_cannot_exceed_the_vehicle_stock_limit():
     )
     assert result.status_code == 422
     assert client.get("/api/vehicles", headers=admin).json()[0]["quantity"] == 100000
-

@@ -50,9 +50,9 @@ Commands were run from the `backend` and `frontend` directories of branch `submi
 | `pnpm test` | **14 passed**, 1 test file, 1.81s. |
 | `pnpm lint` | **Passed**, no findings. |
 | `pnpm build` | **Passed**, Vite transformed 1,579 modules; CSS 10.82 kB and JS 196.98 kB before gzip. |
-| `git diff --check` | **Passed** on the final changes. |
+| `git diff --check` and `git diff --check main..HEAD` | **Passed** after removing extra trailing blank lines flagged in `backend/tests/test_admin.py` and `frontend/eslint.config.js`. |
 
-The final-audit test-first red run was `pnpm exec vitest run src/App.test.jsx`: **13 passed, 1 failed** at the new check that an inventory error must not display the empty state. After the error/retry implementation, the same command reported **14 passed**. The exact red and green commit pair is recorded in `TDD_LOG.md`. No PostgreSQL service test or screen-reader/device compatibility matrix was run.
+The final-audit test-first red run was `pnpm exec vitest run src/App.test.jsx`: **13 passed, 1 failed** at the new check that an inventory error must not display the empty state. After the error/retry implementation, the same command reported **14 passed**. The exact red and green commit pair is recorded in `TDD_LOG.md`. A later final branch-range diff check found two extra blank lines at EOF; they were removed, and the branch-range check was rerun. No PostgreSQL service test or screen-reader/device compatibility matrix was run.
 
 The latest completed run for the final-audit code and evidence commit at this point is [40180347110](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40180347110) on `c972e080709efe1d80c82f5c334effe52eb33e59`. It completed successfully: backend Ruff, pytest, and Alembic steps passed, and frontend test, lint, and production build steps passed. The immediately preceding checkpoint run `40179570241` on `fea340d32a758e95c9d01b8b184a6593d115a951` also passed both jobs. The report-only commit that records this run triggers a new workflow run; its outcome is reported separately after GitHub completes it.
 
