@@ -24,4 +24,4 @@ Status reflects checks actually run in this build; evidence paths are repository
 | CI tests, lint and production build | `.github/workflows/ci.yml`, GitHub Actions run `40180578964` on `4778a3fdc81d932c87ef1201158de6ec8900846b`; backend and frontend jobs passed | Verified |
 | Red–Green–Refactor commit evidence | `TDD_LOG.md`, actual branch history | Verified (test-first red/green commits and a separate lint-driven refactor; no unhelpful refactor commits were added) |
 | Screenshots from running application | `screenshots/customer-inventory.png`, `screenshots/admin-inventory.png` | Verified (captured from running local SPA/API with Playwright and visually inspected) |
-| Genuine prompt record | `PROMPTS.md` | Unverified (no unedited transcript export/build-only share link available) |
+| Genuine prompt record | `PROMPTS.md` contains the user-supplied Codex build and verification conversation link, confirmed by the user to open without sign-in | Verified |
