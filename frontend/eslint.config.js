@@ -6,7 +6,7 @@ export default [
   { ignores: ["dist", "node_modules"] },
   js.configs.recommended,
   {
-    files: ["**/*.{js,jsx}"],
+    files: ["**/*.{js,jsx,mjs}"],
     plugins: { react },
     settings: { react: { version: "detect" } },
     languageOptions: {

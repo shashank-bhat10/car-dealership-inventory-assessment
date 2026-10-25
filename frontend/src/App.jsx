@@ -114,7 +114,7 @@ export default function App() {
     return (
           <main className="app-shell mx-auto w-full">
         <header className="topbar">
-          <a className="brand" href="#inventory" aria-label="Motorhaus home">
+          <a className="brand" href="#inventory">
             <span className="brand-icon"><CarFront size={21} /></span>
             <span>MOTORHAUS<small>DRIVE YOUR WAY</small></span>
           </a>

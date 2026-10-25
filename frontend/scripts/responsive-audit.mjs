@@ -110,9 +110,14 @@ async function assertNoHorizontalOverflow(page, viewport, screen) {
     viewport: document.documentElement.clientWidth,
     document: document.documentElement.scrollWidth,
     body: document.body.scrollWidth,
+    overflowingElements: [...document.querySelectorAll("body *")]
+      .map((element) => ({ element, rect: element.getBoundingClientRect() }))
+      .filter(({ rect }) => rect.right > document.documentElement.clientWidth + 1)
+      .slice(0, 5)
+      .map(({ element, rect }) => `${element.tagName.toLowerCase()}.${String(element.className?.baseVal ?? element.className ?? "").replaceAll(" ", ".")} right=${Math.round(rect.right)}`),
   }));
   if (dimensions.document > dimensions.viewport || dimensions.body > dimensions.viewport) {
-    recordFailure(viewport, screen, `horizontal overflow (viewport ${dimensions.viewport}px, document ${dimensions.document}px, body ${dimensions.body}px)`);
+    recordFailure(viewport, screen, `horizontal overflow (viewport ${dimensions.viewport}px, document ${dimensions.document}px, body ${dimensions.body}px; elements: ${dimensions.overflowingElements.join(", ")})`);
   }
 }
 
@@ -159,7 +164,7 @@ async function assertNoAxeViolations(page, viewport, screen) {
   await page.addScriptTag({ path: path.join(frontendDirectory, "node_modules", "axe-core", "axe.min.js") });
   const results = await page.evaluate(async () => window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } }));
   for (const violation of results.violations) {
-    const nodes = violation.nodes.map((node) => `${node.target.join(" ")}: ${node.failureSummary?.split("\n")[0]}`).join("; ");
+    const nodes = violation.nodes.map((node) => `${node.target.join(" ")}: ${node.any.map((check) => check.message).join(" ")}`).join("; ");
     recordFailure(viewport, screen, `axe ${violation.id} (${violation.impact}): ${nodes}`);
   }
 }
