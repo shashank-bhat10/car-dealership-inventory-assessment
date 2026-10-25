@@ -1,8 +1,12 @@
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import IntegrityError
 
+from app.database import SessionLocal
 from app.main import app
+from app.models import Vehicle
 
 client = TestClient(app)
 
@@ -72,3 +76,23 @@ def test_vehicle_input_rejects_blank_text_invalid_price_and_negative_quantity():
 def test_vehicle_update_reports_missing_id():
     headers = authenticated_headers()
     assert client.put("/api/vehicles/888", json=payload(), headers=headers).status_code == 404
+
+
+@pytest.mark.parametrize(
+    "price,quantity",
+    [(0, 1), (-1, 1), (1, -1), (1, 100001)],
+)
+def test_database_rejects_invalid_vehicle_price_and_stock(price, quantity):
+    with SessionLocal() as session:
+        session.add(
+            Vehicle(
+                make="Database",
+                model=f"Constraint-{uuid4().hex[:8]}",
+                category="Test",
+                price=price,
+                quantity=quantity,
+            )
+        )
+        with pytest.raises(IntegrityError):
+            session.commit()
+        session.rollback()
