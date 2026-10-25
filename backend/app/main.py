@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pwdlib import PasswordHash
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.database import get_session
@@ -42,6 +42,10 @@ class VehicleRequest(BaseModel):
         return normalized
 
 
+class RestockRequest(BaseModel):
+    quantity: int = Field(gt=0, le=100000)
+
+
 class VehicleResponse(VehicleRequest):
     model_config = ConfigDict(from_attributes=True)
 
@@ -72,6 +76,12 @@ def get_current_user(
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    return user
+
+
+def require_admin(user: User = Depends(get_current_user)) -> User:
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Administrator access required")
     return user
 
 
@@ -185,3 +195,39 @@ def update_vehicle(
     session.commit()
     session.refresh(vehicle)
     return vehicle
+
+
+@app.delete("/api/vehicles/{vehicle_id}", status_code=204)
+def delete_vehicle(
+    vehicle_id: int,
+    session: Session = Depends(get_session),
+    _admin: User = Depends(require_admin),
+):
+    vehicle = session.get(Vehicle, vehicle_id)
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    session.delete(vehicle)
+    session.commit()
+
+
+@app.post("/api/vehicles/{vehicle_id}/restock", response_model=VehicleResponse)
+def restock_vehicle(
+    vehicle_id: int,
+    data: RestockRequest,
+    session: Session = Depends(get_session),
+    _admin: User = Depends(require_admin),
+):
+    result = session.execute(
+        update(Vehicle)
+        .where(
+            Vehicle.id == vehicle_id,
+            Vehicle.quantity + data.quantity <= 100000,
+        )
+        .values(quantity=Vehicle.quantity + data.quantity)
+    )
+    if result.rowcount == 0:
+        if session.get(Vehicle, vehicle_id) is None:
+            raise HTTPException(status_code=404, detail="Vehicle not found")
+        raise HTTPException(status_code=422, detail="Stock limit exceeded")
+    session.commit()
+    return session.get(Vehicle, vehicle_id)

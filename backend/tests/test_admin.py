@@ -7,7 +7,7 @@ from app.main import app
 client = TestClient(app)
 
 
-def create_account(email: str, admin: bool = False) -> dict[str, str]:
+def create_account(email: str) -> dict[str, str]:
     password = "Safe-Drive-2046"
     response = client.post("/api/auth/register", json={"email": email, "password": password})
     assert response.status_code == 201
@@ -77,3 +77,4 @@ def test_restock_cannot_exceed_the_vehicle_stock_limit():
     )
     assert result.status_code == 422
     assert client.get("/api/vehicles", headers=admin).json()[0]["quantity"] == 100000
+

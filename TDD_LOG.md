@@ -47,3 +47,5 @@ Every red result below was observed before the implementation commit for that be
 - Observed result before restock implementation: **1 failed, 1 warning**. The missing endpoint returned HTTP 404 instead of the expected 422 and did not yet expose the post-restock stock assertion.
 - Test-first commit: recorded by the commit containing this test.
 - Passing implementation result: pending.
+
+- Passing rerun before admin implementation commit: python -m pytest -q tests/test_admin.py tests/test_vehicles.py tests/test_login.py tests/test_registration.py — **14 passed, 1 upstream warning**.
