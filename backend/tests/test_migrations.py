@@ -44,3 +44,28 @@ def test_fresh_sqlite_database_migrates_purchase_history():
                     "INSERT INTO vehicles (make, model, category, price, quantity) VALUES (?, ?, ?, ?, ?)",
                     ("Test", f"invalid-{price}-{quantity}", "Test", price, quantity),
                 )
+
+
+@pytest.mark.parametrize(
+    "database_url",
+    [
+        "postgres://user:password@localhost/dealership",
+        "postgresql://user:password@localhost/dealership?sslmode=require",
+    ],
+)
+def test_alembic_offline_migration_accepts_raw_postgresql_urls(database_url):
+    env = os.environ.copy()
+    env["DATABASE_URL"] = database_url
+
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=Path(__file__).parents[1],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "PostgresqlImpl" in result.stderr
+    assert "CREATE TABLE users" in result.stdout
+    assert "0003_purchase_history" in result.stdout
