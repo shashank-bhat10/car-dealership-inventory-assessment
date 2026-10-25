@@ -54,7 +54,7 @@ Commands were run from the `backend` and `frontend` directories of branch `submi
 
 The final-audit test-first red run was `pnpm exec vitest run src/App.test.jsx`: **13 passed, 1 failed** at the new check that an inventory error must not display the empty state. After the error/retry implementation, the same command reported **14 passed**. The exact red and green commit pair is recorded in `TDD_LOG.md`. No PostgreSQL service test or screen-reader/device compatibility matrix was run.
 
-The latest run available before these final-audit commits is run `40179570241` on `fea340d32a758e95c9d01b8b184a6593d115a951`; its backend and frontend jobs succeeded. A new Actions run for the final pushed commit will be recorded after it completes.
+The latest completed run for the final-audit code and evidence commit at this point is [40180347110](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40180347110) on `c972e080709efe1d80c82f5c334effe52eb33e59`. It completed successfully: backend Ruff, pytest, and Alembic steps passed, and frontend test, lint, and production build steps passed. The immediately preceding checkpoint run `40179570241` on `fea340d32a758e95c9d01b8b184a6593d115a951` also passed both jobs. The report-only commit that records this run triggers a new workflow run; its outcome is reported separately after GitHub completes it.
 
 ## TDD evidence
 
