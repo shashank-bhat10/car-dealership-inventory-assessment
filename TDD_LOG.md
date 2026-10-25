@@ -24,3 +24,9 @@ The project has a test-first red/green cycle for each implemented functional beh
 ## Visual refinement and lint correction
 
 The initial full-page browser captures exposed that the inventory-specific styles were missing: forms and cards appeared as unstructured rows. Responsive card, filter and admin form styles were added after that real screenshot inspection. The final `pnpm test` (**8 passed**), `pnpm lint` and `pnpm build` were rerun successfully after the CSS change. Ruff had first reported two unused imports; they were removed and final `ruff check app tests` passed. These are recorded as corrective/refactoring improvements; the functional checks remained passing.
+
+## CI environment correction
+
+GitHub Actions run `40179145568` on commit `ce37690` produced a real red result: Ruff and the frontend job passed, but backend test collection failed in six test modules because `httpx` was absent from the declared development requirements. Coverage emitted `no-data-collected` as a consequence. Added pinned `httpx` as a test dependency; this is a configuration fix for the already test-first API suite, and a new CI run will verify it in a clean runner.
+
+After adding `httpx==0.28.1`, the declared dependencies were installed into a clean project `.venv`; `pytest -q` then reported **19 passed, 1 upstream warning**, `ruff check app tests` passed, and Alembic completed against the configured check database. The GitHub rerun is pending.

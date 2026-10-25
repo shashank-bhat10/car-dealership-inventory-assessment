@@ -9,6 +9,7 @@ Working directory: `backend`. Python command executable was the workspace runtim
 | Command | Observed result |
 | --- | --- |
 | `$env:PYTHONPATH='.'; & 'C:\Users\Shashank\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m pytest -q` | **19 passed** in 6.57s on the final run. One upstream warning: Starlette `TestClient` uses deprecated `anyio.abc.BlockingPortal`; no project warning was suppressed. |
+| `.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt` followed by `$env:PYTHONPATH='.'; .venv\Scripts\python.exe -m pytest -q` | Clean project virtual environment installed declared dependencies including `httpx`; **19 passed** in 6.44s, same upstream warning. |
 | `& 'C:\Users\Shashank\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m ruff check app tests` | **All checks passed!** Earlier lint attempt found two unused imports (`Session`, `Decimal`); both were removed and Ruff was rerun successfully. |
 | `$env:DATABASE_URL='sqlite:///./fresh-final-20261025.db'; & 'C:\Users\Shashank\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m alembic -c alembic.ini upgrade head` | **Passed** on a fresh ignored SQLite database; Alembic applied revision `0001_initial`. |
 | `$env:PYTHONPATH='.'; & 'C:\Users\Shashank\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m pytest -q tests/test_login.py` | **3 passed**, one same upstream deprecation warning after adding role metadata. |
@@ -33,7 +34,7 @@ Package-install warnings observed: deprecated `eslint@9.19.0` and transitive `wh
 
 ## CI and migration limitations
 
-The CI workflow is present at `.github/workflows/ci.yml`; its GitHub Actions result remains **unverified until the branch is pushed and Actions completes**. Local fresh SQLite migration passed. PostgreSQL service availability was not established; PostgreSQL behavior remains unverified.
+The first push triggered GitHub Actions run [40179145568](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40179145568) on `ce37690`. Frontend job passed. Backend Ruff passed, then pytest collection failed with six errors because `httpx` was missing from development requirements; Alembic was skipped. Added pinned `httpx==0.28.1` and reran tests in a clean local virtual environment successfully. The branch push will trigger another GitHub Actions run; that run remains pending. Local fresh SQLite migration passed. PostgreSQL service availability was not established; PostgreSQL behavior remains unverified.
 
 ## TDD evidence
 
