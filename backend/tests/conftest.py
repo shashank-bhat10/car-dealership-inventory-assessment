@@ -6,8 +6,12 @@ from uuid import uuid4
 import pytest
 
 TEST_DB = Path(gettempdir()) / f"dealership_tdd_{uuid4().hex}.db"
-os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB.as_posix()}"
-os.environ["TEST_DATABASE_PATH"] = str(TEST_DB)
+if not os.getenv("DATABASE_URL"):
+    os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB.as_posix()}"
+if os.environ["DATABASE_URL"].startswith("sqlite:"):
+    os.environ["TEST_DATABASE_PATH"] = str(TEST_DB)
+else:
+    os.environ.pop("TEST_DATABASE_PATH", None)
 
 
 @pytest.fixture(autouse=True)
