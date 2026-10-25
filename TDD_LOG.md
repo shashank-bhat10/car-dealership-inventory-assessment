@@ -19,3 +19,5 @@ Every red result below was observed before the implementation commit for that be
 - Observed result before login implementation: **2 failed, 1 warning**. Both login scenarios received HTTP 404 because the endpoint was not implemented.
 - Test-first commit: recorded by the commit containing these tests.
 - Passing implementation result: pending.
+
+- Passing rerun before login implementation commit: python -m pytest -q tests/test_login.py tests/test_registration.py — **6 passed, 1 upstream warning**.
