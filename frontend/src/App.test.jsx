@@ -93,13 +93,17 @@ describe("inventory dashboard", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<App />);
     fireEvent.change(screen.getByLabelText("Make"), { target: { value: "Volvo" } });
+    fireEvent.change(screen.getByLabelText("Model"), { target: { value: "XC60" } });
     fireEvent.change(screen.getByLabelText("Category"), { target: { value: "SUV" } });
     fireEvent.change(screen.getByLabelText("Minimum price"), { target: { value: "10000" } });
+    fireEvent.change(screen.getByLabelText("Maximum price"), { target: { value: "50000" } });
     fireEvent.click(screen.getByRole("button", { name: "Search inventory" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(fetchMock.mock.calls[1][0]).toContain("make=Volvo");
+    expect(fetchMock.mock.calls[1][0]).toContain("model=XC60");
     expect(fetchMock.mock.calls[1][0]).toContain("category=SUV");
     expect(fetchMock.mock.calls[1][0]).toContain("min_price=10000");
+    expect(fetchMock.mock.calls[1][0]).toContain("max_price=50000");
   });
 
   it("prevents a customer purchase when the only vehicle is out of stock", async () => {
@@ -121,4 +125,125 @@ describe("inventory dashboard", () => {
     expect(await screen.findByRole("button", { name: "Add vehicle" })).toBeTruthy();
     expect(screen.getByLabelText("Vehicle make")).toBeTruthy();
   });
+
+  it("shows loading before an empty inventory result", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    let finishRequest;
+    const fetchMock = vi.fn(() => new Promise((resolve) => { finishRequest = resolve; }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    expect(screen.getByRole("status").textContent).toContain("Loading");
+    finishRequest({ ok: true, json: async () => [] });
+    expect(await screen.findByRole("heading", { name: "No vehicles found" })).toBeTruthy();
+  });
+
+  it("recovers from an inventory error with an explicit retry", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ detail: "Inventory is unavailable" }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => [vehicle] });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+
+    expect((await screen.findByRole("alert")).textContent).toContain("Inventory is unavailable");
+    expect(screen.queryByRole("heading", { name: "No vehicles found" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Retry inventory load" }));
+    expect(await screen.findByRole("heading", { name: "Volvo XC60" })).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("submits an add request and shows the new vehicle", async () => {
+    const added = { ...vehicle, id: 2, make: "Honda", model: "Civic", price: "28000.00", quantity: 3 };
+    const fetchMock = adminFetchMock([], added, [added]);
+    renderAdmin(fetchMock);
+    enterVehicle({ make: "Honda", model: "Civic", category: "Sedan", price: "28000", quantity: "3" });
+    fireEvent.click(screen.getByRole("button", { name: "Add vehicle" }));
+
+    expect(await screen.findByRole("heading", { name: "Honda Civic" })).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("Vehicle added.");
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/vehicles");
+    expect(fetchMock.mock.calls[1][1].method).toBe("POST");
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+      make: "Honda", model: "Civic", category: "Sedan", price: 28000, quantity: 3,
+    });
+    expect(fetchMock.mock.calls[1][1].headers.get("Authorization")).toBe("Bearer admin-token");
+  });
+
+  it("submits an edit request and renders the updated vehicle", async () => {
+    const updated = { ...vehicle, model: "XC90", price: "65000.00" };
+    const fetchMock = adminFetchMock([vehicle], updated, [updated]);
+    renderAdmin(fetchMock);
+    await screen.findByRole("heading", { name: "Volvo XC60" });
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    fireEvent.change(screen.getByLabelText("Vehicle model"), { target: { value: "XC90" } });
+    fireEvent.change(screen.getByLabelText("Vehicle price"), { target: { value: "65000" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save vehicle" }));
+
+    expect(await screen.findByRole("heading", { name: "Volvo XC90" })).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("Vehicle updated.");
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/vehicles/1");
+    expect(fetchMock.mock.calls[1][1].method).toBe("PUT");
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toMatchObject({ model: "XC90", price: 65000 });
+  });
+
+  it("submits a delete request and removes the vehicle from inventory", async () => {
+    const fetchMock = adminFetchMock([vehicle], {}, []);
+    renderAdmin(fetchMock);
+    await screen.findByRole("heading", { name: "Volvo XC60" });
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(await screen.findByRole("heading", { name: "No vehicles found" })).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("Vehicle deleted.");
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/vehicles/1");
+    expect(fetchMock.mock.calls[1][1].method).toBe("DELETE");
+    expect(fetchMock.mock.calls[1][1].headers.get("Authorization")).toBe("Bearer admin-token");
+  });
+
+  it("submits a restock request and renders the updated stock", async () => {
+    const restocked = { ...vehicle, quantity: 6 };
+    const fetchMock = adminFetchMock([vehicle], restocked, [restocked]);
+    renderAdmin(fetchMock);
+    await screen.findByRole("heading", { name: "Volvo XC60" });
+    fireEvent.change(screen.getByLabelText("Restock quantity for Volvo XC60"), { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("button", { name: "Restock" }));
+
+    expect(await screen.findByText("6 in stock")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("Vehicle restocked.");
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/vehicles/1/restock");
+    expect(fetchMock.mock.calls[1][1].method).toBe("POST");
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ quantity: 4 });
+  });
 });
+
+const vehicle = { id: 1, make: "Volvo", model: "XC60", category: "SUV", price: "48900.00", quantity: 2 };
+
+function response(data, ok = true) {
+  return { ok, json: async () => data };
+}
+
+function adminFetchMock(initialInventory, mutationResult, refreshedInventory) {
+  return vi.fn()
+    .mockResolvedValueOnce(response(initialInventory))
+    .mockResolvedValueOnce(response(mutationResult))
+    .mockResolvedValueOnce(response(refreshedInventory));
+}
+
+function renderAdmin(fetchMock) {
+  localStorage.setItem("access_token", "admin-token");
+  localStorage.setItem("is_admin", "true");
+  vi.stubGlobal("fetch", fetchMock);
+  return render(<App />);
+}
+
+function enterVehicle(values) {
+  for (const [label, value] of Object.entries(values)) {
+    const fieldName = {
+      make: "Vehicle make",
+      model: "Vehicle model",
+      category: "Vehicle category",
+      price: "Vehicle price",
+      quantity: "Vehicle quantity",
+    }[label];
+    fireEvent.change(screen.getByLabelText(fieldName), { target: { value } });
+  }
+}
