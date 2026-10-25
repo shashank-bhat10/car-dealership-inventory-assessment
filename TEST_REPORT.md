@@ -110,7 +110,7 @@ GitHub Actions run [40185723032](https://github.com/shashank-bhat10/car-dealersh
 | `pnpm build` | **Passed**; Vite transformed 1,579 modules; CSS 12.08 kB and JS 197.34 kB before gzip. |
 | `git diff --check` | **Passed**. |
 
-The refactor-specific before/after test command and results are recorded in `TDD_LOG.md`. GitHub Actions run `40185856068` passed on the previous commit `e24a89e`; it ran the responsive browser job in CI, before the new backend refactor and mobile screenshot capture. A CI run for the current pushed changes will be checked after publishing. The mobile screenshot shows the real SPA with deterministic mock API data; this is not a live-backend screenshot or a screen-reader audit.
+The refactor-specific before/after test command and results are recorded in `TDD_LOG.md`. GitHub Actions run [40186263923](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40186263923) passed on commit `87b73ab1c16fbf6fbf16c2f95f24f3d7594625fc`; both backend and frontend jobs succeeded, including the responsive browser/axe matrix. The mobile screenshot shows the running SPA with deterministic mock API data; this is not a live-backend screenshot or a screen-reader audit.
 
 ## TDD evidence
 
