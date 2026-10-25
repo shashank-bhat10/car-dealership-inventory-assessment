@@ -44,6 +44,22 @@ def test_vehicle_list_create_search_and_update_require_authentication():
     assert updated.json()["model"] == "Camry"
 
 
+def test_every_protected_vehicle_route_rejects_anonymous_requests():
+    anonymous_requests = (
+        ("get", "/api/vehicles", None),
+        ("get", "/api/vehicles/search", None),
+        ("post", "/api/vehicles", payload()),
+        ("put", "/api/vehicles/1", payload()),
+        ("delete", "/api/vehicles/1", None),
+        ("post", "/api/vehicles/1/purchase", None),
+        ("post", "/api/vehicles/1/restock", {"quantity": 1}),
+    )
+
+    for method, path, body in anonymous_requests:
+        response = getattr(client, method)(path, json=body) if body is not None else getattr(client, method)(path)
+        assert response.status_code == 401, f"{method.upper()} {path}: {response.text}"
+
+
 def test_vehicle_search_applies_make_model_category_and_price_bounds():
     headers = authenticated_headers()
     client.post("/api/vehicles", json=payload(make="Toyota", model="Corolla", price="22000"), headers=headers)
@@ -60,6 +76,24 @@ def test_vehicle_search_applies_make_model_category_and_price_bounds():
     assert client.get("/api/vehicles/search?make=Ford", headers=headers).json() == []
 
 
+def test_vehicle_search_supports_each_filter_independently():
+    headers = authenticated_headers()
+    client.post("/api/vehicles", json=payload(make="Toyota", model="Corolla", price="22000"), headers=headers)
+    client.post("/api/vehicles", json=payload(make="Honda", model="Civic", category="Hatchback", price="18000"), headers=headers)
+    client.post("/api/vehicles", json=payload(make="Toyota", model="RAV4", category="SUV", price="36000"), headers=headers)
+
+    cases = (
+        ("make=Honda", "Civic"),
+        ("model=RAV", "RAV4"),
+        ("category=Hatch", "Civic"),
+        ("min_price=30000", "RAV4"),
+        ("max_price=20000", "Civic"),
+    )
+    for query, expected_model in cases:
+        results = client.get(f"/api/vehicles/search?{query}", headers=headers).json()
+        assert [vehicle["model"] for vehicle in results] == [expected_model], query
+
+
 def test_vehicle_input_rejects_blank_text_invalid_price_and_negative_quantity():
     headers = authenticated_headers()
     for invalid in (
@@ -69,6 +103,10 @@ def test_vehicle_input_rejects_blank_text_invalid_price_and_negative_quantity():
         payload(price="0"),
         payload(price="1.999"),
         payload(quantity=-1),
+        payload(quantity=100001),
+        payload(make="M" * 81),
+        payload(model="M" * 101),
+        payload(category="C" * 61),
     ):
         assert client.post("/api/vehicles", json=invalid, headers=headers).status_code == 422
 

@@ -3,14 +3,20 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.admin_cli import provision_admin
+from app.database import SessionLocal
 
 client = TestClient(app)
 
 
-def create_account(email: str) -> dict[str, str]:
+def create_account(email: str, *, admin: bool = False) -> dict[str, str]:
     password = "Safe-Drive-2046"
-    response = client.post("/api/auth/register", json={"email": email, "password": password})
-    assert response.status_code == 201
+    if admin:
+        with SessionLocal() as session:
+            provision_admin(email, password, session)
+    else:
+        response = client.post("/api/auth/register", json={"email": email, "password": password})
+        assert response.status_code == 201
     token = client.post(
         "/api/auth/login", data={"username": email, "password": password}
     ).json()["access_token"]
@@ -40,7 +46,7 @@ def test_delete_and_restock_are_admin_only():
 
 
 def test_admin_can_restock_and_delete_and_missing_vehicle_is_reported():
-    admin = create_account("admin@example.com")
+    admin = create_account("admin@example.com", admin=True)
     vehicle_id = create_vehicle(admin)
 
     restocked = client.post(
@@ -53,7 +59,7 @@ def test_admin_can_restock_and_delete_and_missing_vehicle_is_reported():
 
 
 def test_restock_quantity_must_be_positive():
-    admin = create_account("admin@example.com")
+    admin = create_account("admin@example.com", admin=True)
     vehicle_id = create_vehicle(admin)
     for quantity in (0, -1):
         assert client.post(
@@ -63,8 +69,14 @@ def test_restock_quantity_must_be_positive():
         ).status_code == 422
 
 
+def test_restock_reports_a_missing_vehicle():
+    admin = create_account(f"admin-{uuid4().hex}@example.com", admin=True)
+    result = client.post("/api/vehicles/888/restock", json={"quantity": 1}, headers=admin)
+    assert result.status_code == 404
+
+
 def test_restock_cannot_exceed_the_vehicle_stock_limit():
-    admin = create_account("admin@example.com")
+    admin = create_account("admin@example.com", admin=True)
     response = client.post(
         "/api/vehicles",
         json={"make": "Toyota", "model": "Limit", "category": "Sedan", "price": "10000", "quantity": 100000},
