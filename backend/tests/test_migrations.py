@@ -30,7 +30,7 @@ def test_fresh_sqlite_database_migrates_users_and_vehicles():
         }
         revision = connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
     assert {"users", "vehicles", "alembic_version"} <= tables
-    assert revision == "0001_initial"
+    assert revision == "0002_vehicle_constraints"
     with sqlite3.connect(database) as connection:
         for price, quantity in ((0, 1), (-1, 1), (1, -1), (1, 100001)):
             with pytest.raises(sqlite3.IntegrityError):

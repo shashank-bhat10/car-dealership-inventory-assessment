@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Integer, Numeric, String
+from sqlalchemy import Boolean, CheckConstraint, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -15,6 +15,12 @@ class User(Base):
 
 class Vehicle(Base):
     __tablename__ = "vehicles"
+    __table_args__ = (
+        CheckConstraint("price > 0", name="ck_vehicles_price_positive"),
+        CheckConstraint(
+            "quantity >= 0 AND quantity <= 100000", name="ck_vehicles_quantity_range"
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     make: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
