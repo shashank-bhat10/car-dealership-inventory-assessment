@@ -2,6 +2,24 @@
 
 Run date: **2026-10-25** (local development session; Asia/Kolkata). These results are local observations, not GitHub Actions results.
 
+## Latest previously verified GitHub Actions run
+
+GitHub Actions run [40195603662](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40195603662) completed successfully on `submission/tdd-kata` at commit `e62b43a63fa4dfa9d10f39b4051fb7f6b54ff65d`. I verified through the Actions API that the backend, PostgreSQL, and frontend jobs all completed successfully. It verifies that prior branch tip; no later CI result is inferred from this run.
+
+## Delete focus-restoration regression test (2026-10-25)
+
+The fetched branch already had the requested fallback in `ConfirmDialog`: when the dialog opener is disconnected, cleanup focuses `.page-content h1`; the inventory heading is programmatically focusable with `tabIndex="-1"`. Therefore there was no genuine failing result to record and no application implementation change was appropriate. Commit `8b05a2b` adds a focused successful-delete test which verifies the removed opener is replaced in focus by the inventory heading. The test passed on the existing implementation; no red result or implementation commit is claimed for this already-present behavior.
+
+| Exact command | Observed result |
+| --- | --- |
+| From `frontend`: `pnpm exec vitest run src/App.test.jsx -t "restores focus to the inventory heading after confirmed deletion removes the opener"` | **1 passed, 32 skipped**. |
+| From `frontend`: `pnpm test` | **33 passed**, 1 test file. |
+| From `frontend`: `pnpm test:responsive -- --screenshots` | All four viewports passed: 320×640, 375×812, 768×1024, and 1440×900. No overflow, control, focus, or axe findings; screenshots refreshed. |
+| From `frontend`: `pnpm lint` | Passed; ESLint reported no findings. |
+| From `frontend`: `pnpm build` | Passed; Vite transformed 1,592 modules; CSS 14.78 kB and JS 212.61 kB before gzip. |
+
+These are automated browser and DOM accessibility checks. No full screen-reader or physical-device testing was performed.
+
 ## Safe demo-data setup audit (2026-10-25)
 
 Seeder implementation commit: `3018392`; test-first commit: `dcf4335`. All database checks below used temporary local SQLite files; no hosted database was accessed.

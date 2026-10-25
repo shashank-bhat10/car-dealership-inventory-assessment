@@ -100,3 +100,7 @@ The merge commit `c80cabe` was replaced with `0775eb96557dca53ee488c2e092a8d2d5b
 | Confirmation and purchase-history browser states at supported viewports | The unit-test red cases above preceded the UI implementation. The expanded browser audit is supplemental and is not represented as a separate red/green commit pair. | `36400de`; `pnpm test:responsive -- --screenshots`: **all four viewports passed** (320×640, 375×812, 768×1024, 1440×900), including overflow, controls, labels, visible focus, dialog keyboard behavior and axe checks. The run refreshed the linked screenshots. |
 
 The dialogs state that a purchase only reduces inventory and does not process payment. History is labelled as simulated inventory records. Automated axe and keyboard checks are not a full screen-reader audit; no full screen-reader audit was performed.
+
+## Delete focus-restoration regression check (2026-10-25)
+
+The branch already contained the behavior requested here: `ConfirmDialog` detects when its opener is disconnected and moves focus to `.page-content h1`, and the inventory heading has `tabIndex="-1"`. The new test in `8b05a2b` confirms deletion removes the opener and focus returns to that heading. It passed on the existing implementation (**1 passed, 32 skipped** in the focused run). No red result or implementation commit is claimed because no failing behavior was present to implement; the existing cancel, Escape, and focus-trap coverage remains in the suite.
