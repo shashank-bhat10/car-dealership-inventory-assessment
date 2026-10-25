@@ -75,3 +75,7 @@ The assessment requests unedited chat logs or genuine share links. `PROMPTS.md` 
 
 Conversation share link: https://chatgpt.com/s/cx_6addb4c0d0c48191a5c144d38e8dc7e0
 
+
+## Publication
+
+The repository was initialized locally on main. No GitHub remote was configured because this environment exposes no repository-creation action, GitHub CLI, or Git credential helper. See TEST_REPORT.md for the exact action needed to publish this new repository.
