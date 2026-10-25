@@ -38,7 +38,8 @@ def create_vehicle(headers: dict[str, str]) -> int:
 
 def test_delete_and_restock_are_admin_only():
     customer = create_account(f"customer-{uuid4().hex}@example.com")
-    vehicle_id = create_vehicle(customer)
+    admin = create_account(f"admin-{uuid4().hex}@example.com", admin=True)
+    vehicle_id = create_vehicle(admin)
 
     delete_result = client.delete(f"/api/vehicles/{vehicle_id}", headers=customer)
     restock_result = client.post(
@@ -46,6 +47,39 @@ def test_delete_and_restock_are_admin_only():
     )
     assert delete_result.status_code == 403
     assert restock_result.status_code == 403
+
+
+def test_vehicle_creation_is_admin_only():
+    customer = create_account(f"customer-{uuid4().hex}@example.com")
+    admin = create_account(f"admin-{uuid4().hex}@example.com", admin=True)
+    payload = {
+        "make": "Toyota",
+        "model": f"Corolla-{uuid4().hex[:6]}",
+        "category": "Sedan",
+        "price": "24000",
+        "quantity": 2,
+    }
+
+    assert client.post("/api/vehicles", json=payload, headers=customer).status_code == 403
+    assert client.post("/api/vehicles", json=payload, headers=admin).status_code == 201
+
+
+def test_vehicle_update_is_admin_only():
+    customer = create_account(f"customer-{uuid4().hex}@example.com")
+    admin = create_account(f"admin-{uuid4().hex}@example.com", admin=True)
+    vehicle_id = create_vehicle(admin)
+    payload = {
+        "make": "Toyota",
+        "model": "Camry",
+        "category": "Sedan",
+        "price": "26000",
+        "quantity": 2,
+    }
+
+    assert client.put(f"/api/vehicles/{vehicle_id}", json=payload, headers=customer).status_code == 403
+    updated = client.put(f"/api/vehicles/{vehicle_id}", json=payload, headers=admin)
+    assert updated.status_code == 200
+    assert updated.json()["model"] == "Camry"
 
 
 def test_admin_can_restock_and_delete_and_missing_vehicle_is_reported():
