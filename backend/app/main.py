@@ -4,6 +4,7 @@ from decimal import Decimal
 
 import jwt
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pwdlib import PasswordHash
@@ -14,6 +15,14 @@ from app.database import get_session
 from app.models import User, Vehicle
 
 app = FastAPI(title="Car Dealership Inventory API")
+frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=list({frontend_origin, "http://localhost:5173", "http://127.0.0.1:5173"}),
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 password_hash = PasswordHash.recommended()
 SECRET_KEY = os.getenv("SECRET_KEY", "development-key-change-me")
 if os.getenv("ENVIRONMENT") == "production" and SECRET_KEY == "development-key-change-me":
