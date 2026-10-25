@@ -21,7 +21,7 @@ Status reflects checks actually run in this build; evidence paths are repository
 | Responsive/accessibility/loading/empty/error states | `frontend/src/style.css`, semantic labels/roles in `App.jsx` | Partial (labels and states implemented; no automated screen-reader or device matrix) |
 | SPA/API browser origin access | configurable `FRONTEND_ORIGIN` CORS middleware and `backend/tests/test_cors.py` | Verified |
 | Backend and frontend tests | test suites in `backend/tests` and `frontend/src` | Verified |
-| CI tests, lint and production build | `.github/workflows/ci.yml` | Partial until GitHub Actions completes |
+| CI tests, lint and production build | `.github/workflows/ci.yml`, GitHub Actions run `40179459445` | Verified (backend and frontend jobs succeeded) |
 | Red–Green–Refactor commit evidence | `TDD_LOG.md`, actual branch history | Verified (test-first red/green commits and a separate lint-driven refactor; no unhelpful refactor commits were added) |
 | Screenshots from running application | `screenshots/customer-inventory.png`, `screenshots/admin-inventory.png` | Verified (captured from running local SPA/API with Playwright and visually inspected) |
 | Genuine prompt record | `PROMPTS.md` | Unverified (no unedited transcript export/build-only share link available) |
