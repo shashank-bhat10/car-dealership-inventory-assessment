@@ -63,14 +63,14 @@ These checks were run on the local `submission/tdd-kata` worktree after the sour
 | Exact command | Observed result |
 | --- | --- |
 | `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing` | **37 passed** in 24.71s; **94% coverage** (210 statements, 12 missed); one upstream Starlette `anyio.abc.BlockingPortal` deprecation warning. |
-| ` .\.venv\Scripts\ruff.exe check app tests` | **All checks passed!** |
+| `.\.venv\Scripts\ruff.exe check app tests` | **All checks passed!** |
 | `$env:DATABASE_URL='sqlite:///./final-audit-20261025.db'; .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head` | **Passed** on a newly created SQLite database; applied `0001_initial` and `0002_vehicle_constraints`. |
 | `pnpm test` | **15 passed**, 1 test file, 2.50s. |
 | `pnpm lint` | **Passed**, ESLint reported no findings. |
 | `pnpm build` | **Passed**, Vite transformed 1,579 modules; CSS 11.63 kB and JS 197.37 kB before gzip. |
 | `git diff --check` | **Passed**; Git printed only line-ending conversion notices for edited Markdown files. |
 
-The refreshed `screenshots/admin-inventory.png` and `screenshots/customer-inventory.png` were captured with Playwright from the running local SPA and API; both images were opened and visually inspected. GitHub Actions run `40182187248` is the latest successful remote run as of this report update; it covers commit `efe77dd`, not the local audit commits. The post-push run must be checked separately. No PostgreSQL service test or screen-reader/device compatibility matrix was run.
+The refreshed `screenshots/admin-inventory.png` and `screenshots/customer-inventory.png` were captured with Playwright from the running local SPA and API; both images were opened and visually inspected. GitHub Actions run [40183837168](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40183837168) completed successfully on commit `15b61226b46e42470ae89bd8c62ea209944c4cf7`; frontend and backend jobs both passed, including tests, lint, build, and migrations. This run includes all application, test, and screenshot changes. This report/checklist update is documentation-only. No PostgreSQL service test or screen-reader/device compatibility matrix was run.
 
 ## TDD evidence
 
