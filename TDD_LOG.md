@@ -59,3 +59,11 @@ Every red result below was observed before the implementation commit for that be
 - Passing implementation result: pending.
 
 - Passing rerun before purchase implementation commit: python -m pytest -q tests/test_purchases.py — **2 passed, 1 upstream warning**. Eight parallel SQLite HTTP requests for three units yielded three 200 responses and five 409 responses.
+
+## Fresh database migrations
+
+- Red test: `backend/tests/test_migrations.py`
+- Command: `python -m pytest -q tests/test_migrations.py` (working directory `backend`, `PYTHONPATH=.`)
+- Observed result before migration implementation: **1 failed**. Alembic returned `No config file 'alembic.ini' found, or file has no '[alembic]' section`.
+- Test-first commit: recorded by the commit containing this test.
+- Passing implementation result: pending.
