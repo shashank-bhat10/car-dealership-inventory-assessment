@@ -17,6 +17,13 @@ describe("account access", () => {
     expect(screen.getByRole("button", { name: /sign in/i })).toBeTruthy();
   });
 
+  it("applies Tailwind utilities to the page layout, form, and primary button", () => {
+    render(<App />);
+    expect(screen.getByRole("main").classList.contains("min-h-screen")).toBe(true);
+    expect(document.querySelector("form.auth-form").classList.contains("grid")).toBe(true);
+    expect(screen.getByRole("button", { name: /sign in/i }).classList.contains("rounded-sm")).toBe(true);
+  });
+
   it("switches to registration with an accessible create-account form", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
