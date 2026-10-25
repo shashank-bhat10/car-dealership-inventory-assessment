@@ -2,9 +2,9 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.admin_cli import provision_admin
 from app.database import SessionLocal
+from app.main import app, password_hash
+from app.models import User
 
 client = TestClient(app)
 
@@ -13,7 +13,10 @@ def create_account(email: str, *, admin: bool = False) -> dict[str, str]:
     password = "Safe-Drive-2046"
     if admin:
         with SessionLocal() as session:
-            provision_admin(email, password, session)
+            session.add(
+                User(email=email, password_hash=password_hash.hash(password), is_admin=True)
+            )
+            session.commit()
     else:
         response = client.post("/api/auth/register", json={"email": email, "password": password})
         assert response.status_code == 201
