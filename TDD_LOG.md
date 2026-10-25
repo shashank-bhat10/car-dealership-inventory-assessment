@@ -10,6 +10,14 @@ Every red result below was observed before the implementation commit for that be
 - Test-first commit: created in this commit.
 - Passing implementation result: pending.
 
+### Authentication role response
+
+- Red test: `test_login_identifies_bootstrap_administrator` in `backend/tests/test_login.py`
+- Command: `python -m pytest -q tests/test_login.py` (using the workspace Python runtime in `backend`)
+- Observed result before implementation: **1 failed, 2 passed**. Login returned HTTP 200 but omitted `is_admin` (`KeyError`). Starlette emitted one AnyIO deprecation warning.
+- Test-first commit: recorded by the commit containing this test.
+- Passing implementation result: pending.
+
 - Passing rerun before implementation commit: python -m pytest -q tests/test_registration.py — **4 passed, 1 upstream Starlette warning**.
 
 ## JWT login
