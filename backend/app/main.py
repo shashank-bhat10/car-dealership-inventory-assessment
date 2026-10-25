@@ -65,6 +65,14 @@ def create_access_token(user: User) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
 
+def invalid_authentication() -> HTTPException:
+    return HTTPException(
+        status_code=401,
+        detail="Invalid authentication credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
 def get_current_user(
     token: str = Depends(oauth_scheme), session: Session = Depends(get_session)
 ) -> User:
@@ -72,18 +80,10 @@ def get_current_user(
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         user_id = int(payload["sub"])
     except (jwt.InvalidTokenError, KeyError, TypeError, ValueError):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from None
+        raise invalid_authentication() from None
     user = session.get(User, user_id)
     if user is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise invalid_authentication()
     return user
 
 
