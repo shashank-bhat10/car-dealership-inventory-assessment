@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ArrowRight, CarFront } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
@@ -11,13 +11,75 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [inventoryError, setInventoryError] = useState("");
+  const [filters, setFilters] = useState({ make: "", model: "", category: "", min_price: "", max_price: "" });
+  const [notice, setNotice] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [vehicleForm, setVehicleForm] = useState({ make: "", model: "", category: "", price: "", quantity: "" });
+  const [restockAmounts, setRestockAmounts] = useState({});
 
-  async function request(path, options) {
-    const response = await fetch(`${API_URL}${path}`, options);
+  async function request(path, options = {}) {
+    const headers = new Headers(options.headers ?? {});
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const response = await fetch(`${API_URL}${path}`, { ...options, headers });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail ?? "The request could not be completed.");
     return data;
   }
+
+  const loadVehicles = useCallback(async (selected = {}) => {
+    setLoading(true);
+    setInventoryError("");
+    try {
+      const query = new URLSearchParams(Object.entries(selected).filter(([, value]) => value !== ""));
+      setVehicles(await request(`/api/vehicles${query.size ? `?${query}` : ""}`));
+    } catch (requestError) {
+      setInventoryError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  async function purchase(vehicleId) {
+    setNotice("");
+    try {
+      await request(`/api/vehicles/${vehicleId}/purchase`, { method: "POST" });
+      setNotice("Purchase completed.");
+      await loadVehicles(filters);
+    } catch (requestError) { setInventoryError(requestError.message); }
+  }
+
+  async function saveVehicle(event) {
+    event.preventDefault();
+    try {
+      await request(editingId ? `/api/vehicles/${editingId}` : "/api/vehicles", {
+        method: editingId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...vehicleForm, price: Number(vehicleForm.price), quantity: Number(vehicleForm.quantity) }),
+      });
+      setNotice(editingId ? "Vehicle updated." : "Vehicle added.");
+      setEditingId(null);
+      setVehicleForm({ make: "", model: "", category: "", price: "", quantity: "" });
+      await loadVehicles(filters);
+    } catch (requestError) { setInventoryError(requestError.message); }
+  }
+
+  async function adminAction(vehicleId, action, body) {
+    try {
+      await request(`/api/vehicles/${vehicleId}${action}`, {
+        method: action === "/restock" ? "POST" : "DELETE",
+        ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
+      });
+      setNotice(action === "/restock" ? "Vehicle restocked." : "Vehicle deleted.");
+      await loadVehicles(filters);
+    } catch (requestError) { setInventoryError(requestError.message); }
+  }
+
+  useEffect(() => {
+    if (token) loadVehicles();
+  }, [token, loadVehicles]);
 
   async function submitAccount(event) {
     event.preventDefault();
@@ -68,8 +130,56 @@ export default function App() {
         </header>
         <section id="inventory" className="page-content">
           <span className="eyebrow">THE MOTORHAUS COLLECTION</span>
-          <h1>Available vehicles</h1>
-          <p>Your next drive starts here.</p>
+          <div className="inventory-heading">
+            <div><h1>Available vehicles</h1><p>Your next drive starts here.</p></div>
+            <span className="inventory-count">{String(vehicles.length).padStart(2, "0")}</span>
+          </div>
+          <form className="filters" onSubmit={(event) => { event.preventDefault(); loadVehicles(filters); }}>
+            {[["Make", "make"], ["Model", "model"], ["Category", "category"], ["Minimum price", "min_price"], ["Maximum price", "max_price"]].map(([label, key]) => (
+              <label key={key}>{label}<input aria-label={label} type={key.includes("price") ? "number" : "search"} min={key.includes("price") ? "0" : undefined} value={filters[key]} onChange={(event) => setFilters({ ...filters, [key]: event.target.value })} /></label>
+            ))}
+            <button className="primary-button" type="submit">Search inventory</button>
+          </form>
+          {isAdmin && <form className="admin-form" onSubmit={saveVehicle}>
+            <h2>{editingId ? "Update vehicle" : "Add a vehicle"}</h2>
+            {[["Vehicle make", "make"], ["Vehicle model", "model"], ["Vehicle category", "category"], ["Vehicle price", "price"], ["Vehicle quantity", "quantity"]].map(([label, key]) => (
+              <label key={key}>{label}<input aria-label={label} required min={key === "price" ? "0.01" : key === "quantity" ? "0" : undefined} type={key === "price" || key === "quantity" ? "number" : "text"} step={key === "price" ? "0.01" : key === "quantity" ? "1" : undefined} value={vehicleForm[key]} onChange={(event) => setVehicleForm({ ...vehicleForm, [key]: event.target.value })} /></label>
+            ))}
+            <button className="primary-button" type="submit">{editingId ? "Save vehicle" : "Add vehicle"}</button>
+            {editingId && <button type="button" onClick={() => { setEditingId(null); setVehicleForm({ make: "", model: "", category: "", price: "", quantity: "" }); }}>Cancel edit</button>}
+          </form>}
+          {inventoryError && <p className="error-message" role="alert">{inventoryError}</p>}
+          {notice && <p role="status">{notice}</p>}
+          {loading ? (
+            <p role="status" className="state-message">Loading the collection…</p>
+          ) : vehicles.length === 0 ? (
+            <div className="empty-state"><CarFront size={34} /><h2>No vehicles found</h2><p>Check back soon or adjust your search.</p></div>
+          ) : (
+            <div className="vehicle-grid">
+              {vehicles.map((vehicle, index) => (
+                <article className="vehicle-card" key={vehicle.id}>
+                  <div className={`vehicle-art vehicle-art-${index % 3}`} aria-hidden="true">
+                    <CarFront size={110} strokeWidth={0.8} />
+                  </div>
+                  <div className="vehicle-details">
+                    <span className="vehicle-category">{vehicle.category}</span>
+                    <h2>{vehicle.make} {vehicle.model}</h2>
+                    <strong>${Number(vehicle.price).toLocaleString("en-US", { maximumFractionDigits: 0 })}</strong>
+                    <span className={vehicle.quantity > 0 ? "stock-label" : "stock-label sold-out"}>
+                      {vehicle.quantity > 0 ? `${vehicle.quantity} in stock` : "Out of stock"}
+                    </span>
+                    <button className="primary-button" disabled={vehicle.quantity === 0} onClick={() => purchase(vehicle.id)}>{vehicle.quantity > 0 ? "Purchase" : "Out of stock"}</button>
+                    {isAdmin && <div className="admin-actions">
+                      <button type="button" onClick={() => { setEditingId(vehicle.id); setVehicleForm({ make: vehicle.make, model: vehicle.model, category: vehicle.category, price: String(vehicle.price), quantity: String(vehicle.quantity) }); }}>Edit</button>
+                      <button type="button" onClick={() => adminAction(vehicle.id, "")}>Delete</button>
+                      <label>Restock quantity<input aria-label={`Restock quantity for ${vehicle.make} ${vehicle.model}`} type="number" min="1" value={restockAmounts[vehicle.id] ?? "1"} onChange={(event) => setRestockAmounts({ ...restockAmounts, [vehicle.id]: event.target.value })} /></label>
+                      <button type="button" onClick={() => adminAction(vehicle.id, "/restock", { quantity: Number(restockAmounts[vehicle.id] ?? 1) })}>Restock</button>
+                    </div>}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </main>
     );
