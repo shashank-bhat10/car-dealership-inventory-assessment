@@ -4,7 +4,7 @@ Run date: **2026-10-25** (local development session; Asia/Kolkata). These result
 
 ## Latest previously verified GitHub Actions run
 
-GitHub Actions run [40195603662](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40195603662) completed successfully on `submission/tdd-kata` at commit `e62b43a63fa4dfa9d10f39b4051fb7f6b54ff65d`. I verified through the Actions API that the backend, PostgreSQL, and frontend jobs all completed successfully. It verifies that prior branch tip; no later CI result is inferred from this run.
+GitHub Actions run [40196438040](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40196438040) completed successfully on `submission/tdd-kata` at commit `5164d7d4b2141160b397e5079eff311388d94c48`. The Actions API confirms that the backend, PostgreSQL, and frontend jobs all completed successfully. The repository API confirms `submission/tdd-kata` remains the default branch. This is the last verified run before the evidence-only updates in this turn; no later CI result is inferred from it.
 
 ## Delete focus-restoration regression test (2026-10-25)
 
@@ -19,6 +19,26 @@ The fetched branch already had the requested fallback in `ConfirmDialog`: when t
 | From `frontend`: `pnpm build` | Passed; Vite transformed 1,592 modules; CSS 14.78 kB and JS 212.61 kB before gzip. |
 
 These are automated browser and DOM accessibility checks. No full screen-reader or physical-device testing was performed.
+
+## Full-stack local history screenshot capture (2026-10-25)
+
+The screenshots `screenshots/fullstack-customer-history.png` and `screenshots/fullstack-admin-history.png` are separate from the fixture-based viewport-audit images. They were captured from the actual SPA with a local FastAPI backend connected to a fresh SQLite database under `%TEMP%` at `C:\Users\Shashank\AppData\Local\Temp\dealership-evidence-f4b3f9646456498283dbcd58231e0a4f\inventory.db`. No hosted or production database was used. The database was migrated through `0003_purchase_history`; `python -m app.seed_demo` printed `Added 6 demo vehicles; skipped 0 existing vehicles.` A temporary administrator was provisioned using `app.admin_cli.provision_admin()` against that database; no credentials were retained in the repository or screenshots.
+
+| Observed step or check | Result |
+| --- | --- |
+| From `backend`: `.\.venv\Scripts\alembic.exe -c alembic.ini upgrade head`, with `DATABASE_URL` set to the fresh SQLite path and `ENVIRONMENT=development` | Passed; applied `0001_initial`, `0002_vehicle_constraints`, and `0003_purchase_history`. |
+| From `backend`: `python -m app.seed_demo` | Added six fictional vehicles. |
+| Backend: start `python -m uvicorn app.main:app --host 127.0.0.1 --port 8011` with the temp DB and `FRONTEND_ORIGIN=http://127.0.0.1:5181`; frontend: set `$env:VITE_API_URL='http://127.0.0.1:8011'`, then run `pnpm exec vite --host 127.0.0.1 --port 5181 --strictPort` | Both local services started and responded. They were stopped after capture. |
+| From `frontend`: `node .codex-fullstack-capture.mjs` (the temporary script was removed after use) against `http://127.0.0.1:5181/` | Admin sign-in showed six seeded vehicles; a customer account was registered in the UI and purchased the seeded Honda Civic with quantity 1; the UI reported no payment and showed sold-out stock. Both customer and admin history views displayed the purchase. |
+| Direct query of the disposable SQLite database after the UI flow | **1** purchase record; Honda Civic quantity **0**; saved snapshot `Honda Civic`, unit price `22900.00`. |
+
+Temporary account emails are masked in both screenshots; no passwords, tokens, or secret key are shown. The disposable SQLite file was removed after verification. This was an automated real-local-service browser flow, not a deployed-site test. Purchases remain simulated and no payment was processed.
+
+## Evidence records and history audit
+
+All 37 commit hashes cited in `TDD_LOG.md`, excluding its two 11-digit Actions run IDs, resolve as ancestors of the fetched branch tip except the explicitly identified historical refactor pair (`e24a89e…` and `c3f0c9a…`) and old merge `c80cabe`, which are retained in the local backup ref described in the log. The current purchase-history and confirmation Red/Green commits are ancestors of the branch tip. The delete-focus regression test passed against behavior already present; no red run or implementation change is claimed for it.
+
+`PROMPTS.md` contains two share links only, not transcript exports or a complete record of every AI interaction. The Codex link was supplied by the user and previously confirmed to open anonymously. The ChatGPT link was previously opened anonymously during an earlier Chromium check, but the web fetch during this audit timed out; its current availability could not be re-confirmed.
 
 After the regression-test and report changes were pushed, GitHub Actions run [40196294964](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40196294964) completed successfully on branch `submission/tdd-kata`, commit `f4290243c45c5a15b049d8701835d9c483a242d3`. I verified that the backend, PostgreSQL, and frontend jobs all succeeded. This run validates the added focus regression test and documentation at that pushed branch tip.
 
@@ -235,12 +255,12 @@ See [TDD_LOG.md](TDD_LOG.md) for red test commits, observed failing outcomes, im
 | From `frontend`: `pnpm build` | Passed; Vite transformed 1,592 modules; CSS 14.78 kB and JS 212.61 kB before gzip. |
 | `git diff --check` | Passed before feature commit. |
 
-The responsive browser audit uses deterministic API fixtures. It is not a physical-device check or a full screen-reader audit. PostgreSQL verification is delegated to the PostgreSQL 16 GitHub Actions job; its result for the final pushed commit is recorded after that run completes. Purchases are simulated inventory changes; no payment is processed.
+The responsive browser audit uses deterministic API fixtures. It is not a physical-device check or a full screen-reader audit. PostgreSQL verification for the feature commit is recorded in run `40195184620`; run `40196438040` is the later verified branch-tip result on commit `5164d7d4b2141160b397e5079eff311388d94c48`, summarized at the top. Purchases are simulated inventory changes; no payment is processed.
 
 ### GitHub Actions verification
 
 GitHub Actions run [40195184620](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40195184620) completed with **success** on branch `submission/tdd-kata`, commit `f28e695ba0b0970d42bf811a55f43ef0f1a85248`. Backend, PostgreSQL, and frontend jobs all succeeded. The PostgreSQL job reported **21 passed, 1 warning** for `tests/test_postgres_configuration.py`, `tests/test_vehicles.py`, `tests/test_purchases.py`, and `tests/test_purchase_history.py`; `alembic upgrade head` applied `0001_initial`, `0002_vehicle_constraints`, and `0003_purchase_history`. The frontend job completed tests, responsive browser audit, lint, and production build. The backend job completed Ruff, the full coverage test command, and migration.
 
-Warnings observed: PostgreSQL job's upstream Starlette/AnyIO `BlockingPortal` deprecation, PostgreSQL container's trust-authentication initialization notice, and GitHub's Node.js 20 deprecation warning for `actions/checkout@v4` and `actions/setup-python@v5`. No project tests were weakened or warnings suppressed. This CI run tested the feature commit; the subsequent documentation-only commit has its own run linked once it completes.
+Warnings observed: PostgreSQL job's upstream Starlette/AnyIO `BlockingPortal` deprecation, PostgreSQL container's trust-authentication initialization notice, and GitHub's Node.js 20 deprecation warning for `actions/checkout@v4` and `actions/setup-python@v5`. No project tests were weakened or warnings suppressed. Later documentation-only runs `40195347612` and `40195603662` also passed on their respective commits; the most recent pre-update run is summarized at the top.
 
 GitHub Actions also completed successfully on documentation commit `ae5034a81af85ea2ae08d46c5d9516f0d4e6fb75`: run [40195347612](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40195347612). Backend, PostgreSQL, and frontend jobs all succeeded, including PostgreSQL purchase tests/migration and the responsive/axe, lint, test, and build steps. A final evidence-only checklist wording correction follows this run; the resulting commit is separately checked by Actions.

@@ -80,6 +80,8 @@ An earlier audit found no useful backend refactor at that time: `vehicle_stateme
 
 Commit `c3f0c9aff17775207221bb8c0b94e3aad75c08c0` extracts the identical 401 status, message, and `WWW-Authenticate: Bearer` header into one helper. It preserves the invalid-token exception suppression and missing-user behavior. The complete backend suite after this change reported **37 passed**, 94% coverage (212 statements, 13 missed), and one upstream deprecation warning. No other backend behavior or API response was changed.
 
+History qualification: `c3f0c9aff17775207221bb8c0b94e3aad75c08c0` and its parent `e24a89e0c2367c7fda2433e4fb493cdac9a06d4c` are not ancestors of the current submission tip. They remain reachable from the local pre-rewrite backup ref `refs/backup/submission-tdd-kata-before-c80-trailer-e1c44de`, which also retains the original `c80cabe` merge. This is historical evidence preserved locally, not a refactor commit in the current published branch history. The current branch's actual red/green feature commits are listed separately below and resolve as ancestors of its tip.
+
 The merge commit `c80cabe` was replaced with `0775eb96557dca53ee488c2e092a8d2d5bcf1028` to add the established `Co-authored-by: OpenAI Codex <ai@users.noreply.github.com>` trailer. The replacement preserves the original tree and both parent commits in their original order. Its four direct descendants were replayed with their existing messages and changes; a local backup ref, `refs/backup/submission-tdd-kata-before-c80-trailer-e1c44de`, points to the pre-rewrite tip. The existing refactor commit carries the same required trailer.
 
 ## Vehicle details, screen refactor, and PostgreSQL CI (2026-10-25)

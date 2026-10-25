@@ -19,6 +19,11 @@ Captured from the running SPA during the Playwright viewport audit with determin
 - [Customer purchase history](screenshots/purchase-history.png)
 - [Administrator purchase history](screenshots/purchase-history-admin.png)
 
+The two screenshots below are separate full-stack captures. They were made from the running React SPA connected to FastAPI and a fresh disposable SQLite database after migrations and the documented development seeder. A temporary customer account purchased the one-unit Honda Civic through the UI; customer and admin history then showed the database record. Temporary account emails are masked in the images. The fixture-based screenshots above remain labeled as fixture-based; these two show a real local backend/database flow. No payment was processed.
+
+- [Full-stack customer purchase history](screenshots/fullstack-customer-history.png)
+- [Full-stack administrator purchase history](screenshots/fullstack-admin-history.png)
+
 ## Architecture
 
 - `backend/app`: FastAPI routes, SQLAlchemy models, validation, authentication and settings.
@@ -124,7 +129,7 @@ The browser audit uses deterministic API fixtures; it is not a live-backend inte
 
 ## My AI Usage
 
-ChatGPT helped prepare the implementation prompt. OpenAI Codex in the desktop app helped implement and test the project, including its API, migrations, SPA, backend and frontend tests, CI, and evidence documents. Codex also ran the recorded checks, captured screenshots with Playwright, inspected Git state, and verified the GitHub repository and Actions results with the GitHub connector and the repository's saved Git credential. The tools used included PowerShell shell commands and patch editing, the workspace Python and pnpm runtimes, Playwright for genuine browser screenshots, the document-reading workflow for the supplied assessment, Git, and GitHub's authenticated API for repository settings. [PROMPTS.md](PROMPTS.md) contains the supplied links to the Codex build and verification conversation and the ChatGPT prompt-planning conversation. The Codex link was previously confirmed by the user to open anonymously; the ChatGPT share link opened without sign-in in a fresh Chromium context during this audit. AI-assisted implementation, test, and documentation commits carry `Co-authored-by: OpenAI Codex <ai@users.noreply.github.com>`; the merge commit's trailer was added while preserving its tree and parents.
+ChatGPT helped prepare the implementation prompt. OpenAI Codex in the desktop app helped implement and test the project, including its API, migrations, SPA, backend and frontend tests, CI, and evidence documents. Codex also ran the recorded checks, captured fixture-based and full-stack screenshots with Playwright, inspected Git state, and verified repository/Actions state with GitHub's API. Other tools included PowerShell, Python, pnpm, Git, and the document-reading workflow for the supplied assessment. [PROMPTS.md](PROMPTS.md) contains two conversation share links, not transcript exports or a complete archive of every AI interaction. The Codex conversation link was supplied by the user and previously confirmed to open anonymously. The ChatGPT planning share link was previously opened without sign-in in a Chromium check; this audit's separate web fetch timed out, so its current availability was not re-confirmed here. AI-assisted implementation, test, and documentation commits carry `Co-authored-by: OpenAI Codex <ai@users.noreply.github.com>`; the merge commit's trailer was added while preserving its tree and parents.
 
 **Personal reflection:**
 
