@@ -148,13 +148,14 @@ export default function App() {
             <button className="primary-button" type="submit">{editingId ? "Save vehicle" : "Add vehicle"}</button>
             {editingId && <button type="button" onClick={() => { setEditingId(null); setVehicleForm({ make: "", model: "", category: "", price: "", quantity: "" }); }}>Cancel edit</button>}
           </form>}
-          {inventoryError && <p className="error-message" role="alert">{inventoryError}</p>}
+          {inventoryError && <div className="inventory-error">
+            <p className="error-message" role="alert">{inventoryError}</p>
+            <button type="button" onClick={() => loadVehicles(filters)}>Retry inventory load</button>
+          </div>}
           {notice && <p role="status">{notice}</p>}
           {loading ? (
             <p role="status" className="state-message">Loading the collection…</p>
-          ) : vehicles.length === 0 ? (
-            <div className="empty-state"><CarFront size={34} /><h2>No vehicles found</h2><p>Check back soon or adjust your search.</p></div>
-          ) : (
+          ) : vehicles.length > 0 ? (
             <div className="vehicle-grid">
               {vehicles.map((vehicle, index) => (
                 <article className="vehicle-card" key={vehicle.id}>
@@ -179,7 +180,9 @@ export default function App() {
                 </article>
               ))}
             </div>
-          )}
+          ) : !inventoryError ? (
+            <div className="empty-state"><CarFront size={34} /><h2>No vehicles found</h2><p>Check back soon or adjust your search.</p></div>
+          ) : null}
         </section>
       </main>
     );
