@@ -97,6 +97,21 @@ The ChatGPT prompt-planning share URL in `PROMPTS.md` was opened in a fresh head
 
 GitHub Actions run [40185723032](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40185723032) completed successfully on merge commit `c80cabe5651c6204f35789325cc7adc046822aa8`. Both backend and frontend jobs passed; the frontend job installed Chromium and ran the new responsive Playwright/axe matrix. The merge integrates the branch's three concurrent documentation commits without rewriting them. Its merge commit is missing the required Codex co-author trailer; the separate test, UI implementation, and audit-document commits carry it. This history exception is left intact.
 
+## Final checks after the authentication refactor (2026-10-25)
+
+| Exact command | Observed result |
+| --- | --- |
+| `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing` | **37 passed** in 25.51s; **94% coverage** (212 statements, 13 missed); one upstream Starlette `anyio.abc.BlockingPortal` deprecation warning. |
+| `.\.venv\Scripts\ruff.exe check app tests` | **All checks passed!** |
+| `$env:DATABASE_URL='sqlite:///./final-user-audit-20261025.db'; .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head` | **Passed** on a fresh SQLite database; applied `0001_initial` and `0002_vehicle_constraints`. |
+| `pnpm test` | **15 passed**, 1 test file, 2.60s. |
+| `pnpm test:responsive -- --screenshots` | **Passed** all 12 screen/viewport combinations at 320×640, 375×812, 768×1024, and 1440×900. No horizontal overflow, unlabeled controls, undersized targets, keyboard-focus findings, or axe-core WCAG 2.1 A/AA violations. Captured the desktop set and `screenshots/customer-inventory-mobile.png` at 375×812; visually inspected the mobile screenshot. |
+| `pnpm lint` | **Passed**, ESLint reported no findings. |
+| `pnpm build` | **Passed**; Vite transformed 1,579 modules; CSS 12.08 kB and JS 197.34 kB before gzip. |
+| `git diff --check` | **Passed**. |
+
+The refactor-specific before/after test command and results are recorded in `TDD_LOG.md`. GitHub Actions run `40185856068` passed on the previous commit `e24a89e`; it ran the responsive browser job in CI, before the new backend refactor and mobile screenshot capture. A CI run for the current pushed changes will be checked after publishing. The mobile screenshot shows the real SPA with deterministic mock API data; this is not a live-backend screenshot or a screen-reader audit.
+
 ## TDD evidence
 
 See [TDD_LOG.md](TDD_LOG.md) for red test commits, observed failing outcomes, implementation commits, passing reruns and the concurrency-test scope. Tests and test result commits precede the corresponding implementation commits throughout the recorded branch history.

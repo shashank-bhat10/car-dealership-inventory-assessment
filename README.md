@@ -10,6 +10,7 @@ Captured from the running SPA during the Playwright viewport audit with determin
 
 - [Sign-in screen](screenshots/sign-in.png)
 - [Customer inventory](screenshots/customer-inventory.png)
+- [Customer inventory at 375×812](screenshots/customer-inventory-mobile.png)
 - [Administrator inventory](screenshots/admin-inventory.png)
 
 ## Architecture
@@ -87,7 +88,7 @@ Vehicle input validates non-empty make/model/category, positive price, integer q
 
 ## Tests and evidence
 
-Run backend checks from `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing`, `.\.venv\Scripts\ruff.exe check app tests`, and `$env:DATABASE_URL='sqlite:///./fresh-check.db'; .\.venv\Scripts\alembic.exe upgrade head`. Run frontend checks from `frontend`: `pnpm test`, `pnpm test:responsive`, `pnpm lint`, `pnpm build`. The repeatable Playwright audit starts Vite, checks sign-in/customer/admin screens at 320×640, 375×812, 768×1024, and 1440×900, exercises customer/admin flows, checks overflow, labeled controls, 24 CSS pixel minimum targets and visible keyboard focus, and runs axe-core WCAG 2.1 A/AA rules. It uses deterministic API fixtures and is not a live-backend integration run or a screen-reader audit. Install Chromium with `pnpm exec playwright install chromium` if needed. Exact observed commands, results, warnings and unverified checks are in [TEST_REPORT.md](TEST_REPORT.md). Requirement evidence is mapped in [REQUIREMENTS_CHECKLIST.md](REQUIREMENTS_CHECKLIST.md). Actual test-first commit IDs and red/green outcomes are in [TDD_LOG.md](TDD_LOG.md).
+Run backend checks from `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing`, `.\.venv\Scripts\ruff.exe check app tests`, and `$env:DATABASE_URL='sqlite:///./fresh-check.db'; .\.venv\Scripts\alembic.exe upgrade head`. Run frontend checks from `frontend`: `pnpm test`, `pnpm test:responsive`, `pnpm lint`, `pnpm build`. The repeatable Playwright audit starts Vite, checks sign-in/customer/admin screens at 320×640, 375×812, 768×1024, and 1440×900, exercises customer/admin flows, checks overflow, labeled controls, 24 CSS pixel minimum targets and visible keyboard focus, and runs axe-core WCAG 2.1 A/AA rules. `pnpm test:responsive -- --screenshots` also captures the desktop screens and 375×812 customer view linked above. The audit uses deterministic API fixtures and is not a live-backend integration run or a screen-reader audit. Install Chromium with `pnpm exec playwright install chromium` if needed. Exact observed commands, results, warnings and unverified checks are in [TEST_REPORT.md](TEST_REPORT.md). Requirement evidence is mapped in [REQUIREMENTS_CHECKLIST.md](REQUIREMENTS_CHECKLIST.md). Actual test-first commit IDs and red/green outcomes are in [TDD_LOG.md](TDD_LOG.md).
 
 ## My AI Usage
 

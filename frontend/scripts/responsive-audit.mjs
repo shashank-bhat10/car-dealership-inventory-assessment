@@ -174,8 +174,11 @@ async function auditScreen(page, viewport, screen, captureName) {
   await assertLabeledControls(page, viewport, screen);
   await assertKeyboardFocus(page, viewport, screen);
   await assertNoAxeViolations(page, viewport, screen);
-  if (screenshotsRequested && viewport.width === 1440 && captureName) {
-    await page.screenshot({ path: path.join(screenshotDirectory, captureName), fullPage: true });
+  const isMobileCustomerScreen = viewport.width === 375 && screen === "customer inventory";
+  const isDesktopScreenshot = viewport.width === 1440 && captureName;
+  if (screenshotsRequested && (isDesktopScreenshot || isMobileCustomerScreen)) {
+    const screenshotName = isMobileCustomerScreen ? "customer-inventory-mobile.png" : captureName;
+    await page.screenshot({ path: path.join(screenshotDirectory, screenshotName), fullPage: true });
   }
 }
 
