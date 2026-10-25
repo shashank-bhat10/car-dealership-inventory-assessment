@@ -20,6 +20,8 @@ The fetched branch already had the requested fallback in `ConfirmDialog`: when t
 
 These are automated browser and DOM accessibility checks. No full screen-reader or physical-device testing was performed.
 
+After the regression-test and report changes were pushed, GitHub Actions run [40196294964](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40196294964) completed successfully on branch `submission/tdd-kata`, commit `f4290243c45c5a15b049d8701835d9c483a242d3`. I verified that the backend, PostgreSQL, and frontend jobs all succeeded. This run validates the added focus regression test and documentation at that pushed branch tip.
+
 ## Safe demo-data setup audit (2026-10-25)
 
 Seeder implementation commit: `3018392`; test-first commit: `dcf4335`. All database checks below used temporary local SQLite files; no hosted database was accessed.
