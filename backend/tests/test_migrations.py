@@ -9,7 +9,7 @@ from uuid import uuid4
 import pytest
 
 
-def test_fresh_sqlite_database_migrates_users_and_vehicles():
+def test_fresh_sqlite_database_migrates_purchase_history():
     database = Path(gettempdir()) / f"dealership_migration_{uuid4().hex}.db"
     env = os.environ.copy()
     env["DATABASE_URL"] = f"sqlite:///{database.as_posix()}"
@@ -29,8 +29,14 @@ def test_fresh_sqlite_database_migrates_users_and_vehicles():
             for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
         revision = connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
-    assert {"users", "vehicles", "alembic_version"} <= tables
-    assert revision == "0002_vehicle_constraints"
+    assert {"users", "vehicles", "purchases", "alembic_version"} <= tables
+    assert revision == "0003_purchase_history"
+    with sqlite3.connect(database) as connection:
+        columns = {row[1]: row for row in connection.execute("PRAGMA table_info(purchases)")}
+        vehicle_foreign_key = connection.execute("PRAGMA foreign_key_list(purchases)").fetchall()
+    assert {"id", "purchaser_id", "vehicle_id", "make", "model", "unit_price", "purchased_at"} <= columns.keys()
+    assert columns["vehicle_id"][3] == 0
+    assert any(row[2] == "vehicles" and row[6].upper() == "SET NULL" for row in vehicle_foreign_key)
     with sqlite3.connect(database) as connection:
         for price, quantity in ((0, 1), (-1, 1), (1, -1), (1, 100001)):
             with pytest.raises(sqlite3.IntegrityError):
