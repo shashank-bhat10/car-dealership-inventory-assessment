@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHONPATH: .
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dealership
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/dealership
       ENVIRONMENT: development
       SECRET_KEY: ci-temporary-database-test-key-only
     services:
