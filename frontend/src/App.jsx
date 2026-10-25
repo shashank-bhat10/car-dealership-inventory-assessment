@@ -112,7 +112,7 @@ export default function App() {
 
   if (token) {
     return (
-      <main className="app-shell">
+          <main className="app-shell mx-auto w-full">
         <header className="topbar">
           <a className="brand" href="#inventory" aria-label="Motorhaus home">
             <span className="brand-icon"><CarFront size={21} /></span>
@@ -138,14 +138,14 @@ export default function App() {
             {[["Make", "make"], ["Model", "model"], ["Category", "category"], ["Minimum price", "min_price"], ["Maximum price", "max_price"]].map(([label, key]) => (
               <label key={key}>{label}<input aria-label={label} type={key.includes("price") ? "number" : "search"} min={key.includes("price") ? "0" : undefined} value={filters[key]} onChange={(event) => setFilters({ ...filters, [key]: event.target.value })} /></label>
             ))}
-            <button className="primary-button" type="submit">Search inventory</button>
+              <button className="primary-button flex items-center justify-between rounded-sm transition-colors duration-150" type="submit">Search inventory</button>
           </form>
           {isAdmin && <form className="admin-form" onSubmit={saveVehicle}>
             <h2>{editingId ? "Update vehicle" : "Add a vehicle"}</h2>
             {[["Vehicle make", "make"], ["Vehicle model", "model"], ["Vehicle category", "category"], ["Vehicle price", "price"], ["Vehicle quantity", "quantity"]].map(([label, key]) => (
               <label key={key}>{label}<input aria-label={label} required min={key === "price" ? "0.01" : key === "quantity" ? "0" : undefined} type={key === "price" || key === "quantity" ? "number" : "text"} step={key === "price" ? "0.01" : key === "quantity" ? "1" : undefined} value={vehicleForm[key]} onChange={(event) => setVehicleForm({ ...vehicleForm, [key]: event.target.value })} /></label>
             ))}
-            <button className="primary-button" type="submit">{editingId ? "Save vehicle" : "Add vehicle"}</button>
+            <button className="primary-button flex items-center justify-between rounded-sm transition-colors duration-150" type="submit">{editingId ? "Save vehicle" : "Add vehicle"}</button>
             {editingId && <button type="button" onClick={() => { setEditingId(null); setVehicleForm({ make: "", model: "", category: "", price: "", quantity: "" }); }}>Cancel edit</button>}
           </form>}
           {inventoryError && <div className="inventory-error">
@@ -169,7 +169,7 @@ export default function App() {
                     <span className={vehicle.quantity > 0 ? "stock-label" : "stock-label sold-out"}>
                       {vehicle.quantity > 0 ? `${vehicle.quantity} in stock` : "Out of stock"}
                     </span>
-                    <button className="primary-button" disabled={vehicle.quantity === 0} onClick={() => purchase(vehicle.id)}>{vehicle.quantity > 0 ? "Purchase" : "Out of stock"}</button>
+                    <button className="primary-button flex items-center justify-between rounded-sm transition-colors duration-150" disabled={vehicle.quantity === 0} onClick={() => purchase(vehicle.id)}>{vehicle.quantity > 0 ? "Purchase" : "Out of stock"}</button>
                     {isAdmin && <div className="admin-actions">
                       <button type="button" onClick={() => { setEditingId(vehicle.id); setVehicleForm({ make: vehicle.make, model: vehicle.model, category: vehicle.category, price: String(vehicle.price), quantity: String(vehicle.quantity) }); }}>Edit</button>
                       <button type="button" onClick={() => adminAction(vehicle.id, "")}>Delete</button>
@@ -189,13 +189,13 @@ export default function App() {
   }
 
   return (
-    <main className="auth-layout">
+      <main className="auth-layout min-h-screen grid grid-cols-1 lg:grid-cols-2">
       <section className="auth-panel" aria-labelledby="auth-title">
         <div className="brand-icon auth-brand"><CarFront size={24} /></div>
         <span className="eyebrow">MOTORHAUS / INVENTORY</span>
         <h1 id="auth-title">{mode === "login" ? "Find your next drive." : "Join the road ahead."}</h1>
         <p className="intro">A considered collection of vehicles, ready for wherever the road leads.</p>
-        <form className="auth-form" onSubmit={submitAccount}>
+        <form className="auth-form grid gap-[10px] mt-8" onSubmit={submitAccount}>
           <label htmlFor="email">Email address</label>
           <input
             id="email"
@@ -217,7 +217,7 @@ export default function App() {
             onChange={(event) => setPassword(event.target.value)}
           />
           {error && <p className="error-message" role="alert">{error}</p>}
-          <button className="primary-button" type="submit" disabled={busy}>
+          <button className="primary-button flex items-center justify-between rounded-sm transition-colors duration-150" type="submit" disabled={busy}>
             {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
             <ArrowRight size={17} aria-hidden="true" />
           </button>
