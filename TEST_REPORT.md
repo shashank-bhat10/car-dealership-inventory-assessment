@@ -4,7 +4,7 @@ Run date: **2026-10-25** (local development session; Asia/Kolkata). These result
 
 ## Final submission-readiness audit (2026-10-25)
 
-These checks were rerun on the clean local `submission/tdd-kata` branch at `3b3bf4fc07372f79ea38ae62eb8a95e593604b59`. The remote branch points to the same commit. GitHub reports `submission/tdd-kata` as the repository default branch; `main` remains unchanged.
+These checks were rerun on the clean local `submission/tdd-kata` branch at code commit `3b3bf4fc07372f79ea38ae62eb8a95e593604b59`; the following changes through `bc31b83ed89d0df818f8d01733932f5733465e49` updated audit documentation only. GitHub Actions passed all three jobs on that documentation commit in run [40188788798](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40188788798). GitHub reports `submission/tdd-kata` as the repository default branch; `main` remains unchanged.
 
 | Exact command | Observed result |
 | --- | --- |
@@ -16,7 +16,7 @@ These checks were rerun on the clean local `submission/tdd-kata` branch at `3b3b
 | From `frontend`: `pnpm lint` | **Passed**, ESLint reported no findings. |
 | From `frontend`: `pnpm build` | **Passed**; Vite transformed 1,590 modules; CSS 13.27 kB and JS 205.94 kB before gzip. |
 | `git diff --check` | **Passed** after the documentation update. |
-| GitHub Actions [run 40188353690](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40188353690) | **Completed successfully** for exact branch tip `3b3bf4fc07372f79ea38ae62eb8a95e593604b59`: backend, PostgreSQL, and frontend jobs all succeeded. The PostgreSQL job ran vehicle/purchase/configuration tests and both Alembic revisions against its PostgreSQL 16 service. |
+| GitHub Actions [run 40188788798](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40188788798) | **Completed successfully** for documentation commit `bc31b83ed89d0df818f8d01733932f5733465e49`: backend, PostgreSQL, and frontend jobs all succeeded. The PostgreSQL job ran vehicle/purchase/configuration tests and both Alembic revisions against its PostgreSQL 16 service. |
 
 The local PostgreSQL service is not authenticated in this environment; server-backed PostgreSQL verification is from the GitHub Actions job above. The automated accessibility checks do not constitute a screen-reader audit or physical-device test. The only local test warning was the upstream Starlette/AnyIO deprecation noted above.
 
