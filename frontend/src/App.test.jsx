@@ -85,4 +85,30 @@ describe("inventory dashboard", () => {
     expect(screen.getByText("$48,900")).toBeTruthy();
     expect(screen.getByText("4 in stock")).toBeTruthy();
   });
+
+  it("searches vehicles by make, category, and price range", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [] });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    fireEvent.change(screen.getByLabelText("Make"), { target: { value: "Volvo" } });
+    fireEvent.change(screen.getByLabelText("Category"), { target: { value: "SUV" } });
+    fireEvent.change(screen.getByLabelText("Minimum price"), { target: { value: "10000" } });
+    fireEvent.click(screen.getByRole("button", { name: "Search inventory" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(fetchMock.mock.calls[1][0]).toContain("make=Volvo");
+    expect(fetchMock.mock.calls[1][0]).toContain("category=SUV");
+    expect(fetchMock.mock.calls[1][0]).toContain("min_price=10000");
+  });
+
+  it("prevents a customer purchase when the only vehicle is out of stock", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{ id: 3, make: "Volvo", model: "XC60", category: "SUV", price: 48900, quantity: 0 }],
+    }));
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Volvo XC60" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Out of stock" }).hasAttribute("disabled")).toBe(true);
+  });
 });

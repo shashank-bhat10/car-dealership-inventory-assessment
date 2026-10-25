@@ -8,6 +8,14 @@ Every red result below was observed before the implementation commit for that be
 - Command: `python -m pytest -q tests/test_registration.py` (working directory `backend`, `PYTHONPATH=.`)
 - Observed result against the empty FastAPI harness: **4 failed, 1 warning**. Each route assertion received HTTP 404. The warning was Starlette's upstream deprecation for `anyio.abc.BlockingPortal`.
 - Test-first commit: created in this commit.
+- Passing rerun: `pnpm exec vitest run -t 'loads protected inventory'` — **1 passed, 4 skipped**. Request helper sends the bearer token and dashboard renders inventory data.
+
+## Inventory search and stock boundary UI
+
+- Red tests: search request parameters and disabled zero-stock purchase control in `frontend/src/App.test.jsx`.
+- Command: `pnpm exec vitest run -t 'searches vehicles|prevents a customer purchase'`.
+- Observed result before implementation: **2 failed, 5 skipped**. Search controls and purchase button did not exist.
+- Test-first commit: recorded by the commit containing these tests.
 - Passing implementation result: pending.
 
 ### Authentication role response
@@ -16,7 +24,7 @@ Every red result below was observed before the implementation commit for that be
 - Command: `python -m pytest -q tests/test_login.py` (using the workspace Python runtime in `backend`)
 - Observed result before implementation: **1 failed, 2 passed**. Login returned HTTP 200 but omitted `is_admin` (`KeyError`). Starlette emitted one AnyIO deprecation warning.
 - Test-first commit: recorded by the commit containing this test.
-- Passing implementation result: pending.
+- Passing rerun before implementation commit: `python -m pytest -q tests/test_login.py` — **3 passed**, one Starlette/AnyIO deprecation warning.
 
 - Passing rerun before implementation commit: python -m pytest -q tests/test_registration.py — **4 passed, 1 upstream Starlette warning**.
 
