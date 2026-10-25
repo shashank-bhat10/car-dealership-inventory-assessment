@@ -10,7 +10,7 @@ export default function InventoryScreen({ vehicles, isAdmin, loading, error, not
   return (
     <section id="inventory" className="page-content">
       <span className="eyebrow">THE MOTORHAUS COLLECTION</span>
-      <div className="inventory-heading"><div><h1>Available vehicles</h1><p>Your next drive starts here.</p></div><span className="inventory-count">{String(vehicles.length).padStart(2, "0")}</span></div>
+      <div className="inventory-heading"><div><h1 tabIndex="-1">Available vehicles</h1><p>Your next drive starts here.</p></div><span className="inventory-count">{String(vehicles.length).padStart(2, "0")}</span></div>
       <form className="filters" onSubmit={(event) => { event.preventDefault(); onSearch(); }}>
         {filterFields.map(([label, key]) => <label key={key}>{label}<input aria-label={label} type={key.includes("price") ? "number" : "search"} min={key.includes("price") ? "0" : undefined} value={filters[key]} onChange={(event) => onFilterChange(key, event.target.value)} /></label>)}
         <button className="primary-button flex items-center justify-between rounded-sm transition-colors duration-150" type="submit">Search inventory</button>

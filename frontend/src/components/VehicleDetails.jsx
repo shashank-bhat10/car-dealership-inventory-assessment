@@ -16,7 +16,7 @@ export default function VehicleDetails({ vehicle, isAdmin, loading, error, notic
           <div className="vehicle-art vehicle-art-0" aria-hidden="true"><CarFront size={140} strokeWidth={0.8} /></div>
           <div className="vehicle-details">
             <span className="vehicle-category">{vehicle.category}</span>
-            <h1>{vehicle.make} {vehicle.model}</h1>
+            <h1 tabIndex="-1">{vehicle.make} {vehicle.model}</h1>
             <strong>${Number(vehicle.price).toLocaleString("en-US", { maximumFractionDigits: 0 })}</strong>
             <dl className="vehicle-specs">
               <div><dt>Make</dt><dd>{vehicle.make}</dd></div>
@@ -26,10 +26,10 @@ export default function VehicleDetails({ vehicle, isAdmin, loading, error, notic
               <div><dt>Vehicle ID</dt><dd>{vehicle.id}</dd></div>
               <div><dt>Stock</dt><dd>{vehicle.quantity > 0 ? `${vehicle.quantity} in stock` : "Out of stock"}</dd></div>
             </dl>
-            <button className="primary-button flex items-center justify-between rounded-sm transition-colors duration-150" disabled={vehicle.quantity === 0} onClick={() => onPurchase(vehicle.id)}>{vehicle.quantity > 0 ? "Purchase" : "Out of stock"}</button>
+            <button className="primary-button flex items-center justify-between rounded-sm transition-colors duration-150" disabled={vehicle.quantity === 0} onClick={() => onPurchase(vehicle)}>{vehicle.quantity > 0 ? "Purchase" : "Out of stock"}</button>
             {isAdmin && <section className="admin-actions" aria-label="Administrator vehicle actions">
               {editing ? <AdminVehicleForm editing values={values} onChange={onChange} onSubmit={onSave} onCancel={onCancel} /> : <button type="button" onClick={() => onEdit(vehicle)}>Edit</button>}
-              <button type="button" onClick={() => onDelete(vehicle.id)}>Delete</button>
+              <button type="button" onClick={() => onDelete(vehicle)}>Delete</button>
               <label>Restock quantity<input aria-label={`Restock quantity for ${vehicle.make} ${vehicle.model}`} type="number" min="1" value={restockAmount} onChange={(event) => onRestockChange(vehicle.id, event.target.value)} /></label>
               <button type="button" onClick={() => onRestock(vehicle.id, Number(restockAmount))}>Restock</button>
             </section>}

@@ -1,6 +1,6 @@
 # Motorhaus Inventory
 
-An inventory and purchasing application for a small car dealership. The React single page app uses a FastAPI JSON API, SQLAlchemy persistence, Alembic migrations, hashed account passwords, and signed bearer tokens.
+An inventory and simulated purchasing application for a small car dealership. The React single page app uses a FastAPI JSON API, SQLAlchemy persistence, Alembic migrations, hashed account passwords, and signed bearer tokens. A purchase only decrements inventory and records a history snapshot; it does not process payment.
 
 The public repository's default branch is `submission/tdd-kata`, so the repository root opens this submission.
 
@@ -14,18 +14,22 @@ Captured from the running SPA during the Playwright viewport audit with determin
 - [Administrator inventory](screenshots/admin-inventory.png)
 - [Vehicle details](screenshots/vehicle-details.png)
 - [Vehicle details at 375×812](screenshots/vehicle-details-mobile.png)
+- [Purchase confirmation](screenshots/purchase-confirmation.png)
+- [Vehicle deletion confirmation](screenshots/vehicle-delete-confirmation.png)
+- [Customer purchase history](screenshots/purchase-history.png)
+- [Administrator purchase history](screenshots/purchase-history-admin.png)
 
 ## Architecture
 
 - `backend/app`: FastAPI routes, SQLAlchemy models, validation, authentication and settings.
-- `backend/alembic`: versioned schema migrations.
-- `backend/tests`: API, permission, validation, stock and migration tests.
-- `frontend/src/App.jsx`: authentication, route state and inventory orchestration.
-- `frontend/src/components`: focused authentication, inventory, vehicle card/details and admin form components.
+- `backend/alembic`: versioned schema migrations, including a forward migration for purchase history.
+- `backend/tests`: API, permission, validation, stock, history transaction, and migration tests.
+- `frontend/src/App.jsx`: authentication, route state, inventory, confirmation, and history orchestration.
+- `frontend/src/components`: focused authentication, inventory, vehicle details, admin form, accessible confirmation dialog, and purchase history components.
 - `frontend/src/services/api.js`: shared bearer-token API client and error handling.
 - `.github/workflows/ci.yml`: backend, PostgreSQL, browser accessibility, frontend test, lint and production-build checks on pushes and pull requests.
 
-Purchases use a single conditional SQL `UPDATE` (`quantity > 0`) so competing requests cannot decrement below zero. Restock also uses a conditional update and stock ceiling. SQLite is the local default and satisfies the persistent-database requirement. The workflow includes a PostgreSQL 16 service job for API/purchase tests and migrations; local PostgreSQL could not be authenticated in this environment.
+Purchases use one conditional SQL `UPDATE` (`quantity > 0`) and insert a purchaser/time/vehicle-price snapshot in the same database transaction. Competing requests cannot decrement below zero; if the history insert fails, the stock change rolls back. Vehicle deletion sets the purchase's vehicle reference to null while retaining saved details. These are simulated inventory records, not paid invoices or completed payment orders. No payment is charged or processed. Restock also uses a conditional update and stock ceiling. SQLite is the local default and satisfies the persistent-database requirement. The workflow includes a PostgreSQL 16 service job for vehicle, purchase-history tests, and migrations; local PostgreSQL could not be authenticated in this environment.
 
 ## Run locally
 
@@ -100,12 +104,23 @@ Registration and login are public. Every vehicle and inventory route requires `A
 | DELETE | `/api/vehicles/{id}` | Admin | Remove vehicle |
 | POST | `/api/vehicles/{id}/restock` | Admin | Add stock within the configured stock limit |
 | POST | `/api/vehicles/{id}/purchase` | Authenticated | Decrement one available unit safely |
+| GET | `/api/purchases` | Authenticated | Return only the current account's simulated inventory purchase records |
+| GET | `/api/admin/purchases` | Admin | Return simulated purchase records across users, including purchaser email |
 
 Vehicle input validates non-empty make/model/category, positive price, integer quantity, bounded field sizes and unique database IDs. Out-of-stock purchases return HTTP 409; missing items return 404.
 
+Both history routes accept `limit` (default 20, range 1–100) and `offset` (default 0, maximum 10000), and return newest records first. Each record keeps the unit price and vehicle make/model from the time of purchase. The vehicle reference becomes null after an administrator deletes its listing, while its saved details remain readable. Purchase records do not represent payment.
+
 ## Tests and evidence
 
-Run backend checks from `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing`, `.\.venv\Scripts\ruff.exe check app tests`, and set a fresh SQLite `DATABASE_URL` before `.\.venv\Scripts\alembic.exe -c alembic.ini upgrade head`. Run frontend checks from `frontend`: `pnpm test`, `pnpm test:responsive -- --screenshots`, `pnpm lint`, `pnpm build`. The Playwright audit checks sign-in, customer inventory/detail, and administrator inventory/detail at 320×640, 375×812, 768×1024, and 1440×900. It checks overflow, named controls, minimum 24 CSS-pixel targets, visible focus, keyboard Enter navigation, detail-header spacing, and axe-core WCAG 2.1 A/AA rules. It exercises customer search/purchase/out-of-stock and administrator add/edit/restock/delete flows. The audit uses deterministic API fixtures; it is not a live-backend integration or physical-device test. No full screen-reader audit was performed. CI runs API/purchase tests and Alembic against a temporary PostgreSQL service. Install Chromium with `pnpm exec playwright install chromium` if needed. Exact commands, results, warnings and unverified checks are in [TEST_REPORT.md](TEST_REPORT.md). Requirement evidence is mapped in [REQUIREMENTS_CHECKLIST.md](REQUIREMENTS_CHECKLIST.md). Test-first commit IDs and red/green/refactor results are in [TDD_LOG.md](TDD_LOG.md).
+From backend, run:
+- $env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing
+- .\.venv\Scripts\ruff.exe check app tests
+- Set a fresh local SQLite DATABASE_URL before .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head.
+
+From frontend, run pnpm test, pnpm test:responsive -- --screenshots, pnpm lint, and pnpm build. The Playwright audit checks sign-in, customer/admin inventory and purchase history, vehicle details, and purchase/delete confirmation dialogs at 320×640, 375×812, 768×1024, and 1440×900. It checks overflow, named controls, 24 CSS-pixel targets, visible focus, focus cycling, Escape handling, and axe-core WCAG 2.1 A/AA rules. It exercises customer search, simulated purchase confirmation, out-of-stock behavior, customer/admin history, and administrator add/edit/restock/delete confirmations.
+
+The browser audit uses deterministic API fixtures; it is not a live-backend integration or physical-device test. Automated focus and axe checks do not constitute a full screen-reader audit, which was not performed. CI runs purchase-history tests and migrations against a temporary PostgreSQL service. Install Chromium with pnpm exec playwright install chromium if needed. Exact commands, results, warnings, and limitations are in [TEST_REPORT.md](TEST_REPORT.md); requirement evidence is mapped in [REQUIREMENTS_CHECKLIST.md](REQUIREMENTS_CHECKLIST.md); actual red/green test-first commits are recorded in [TDD_LOG.md](TDD_LOG.md).
 
 ## My AI Usage
 

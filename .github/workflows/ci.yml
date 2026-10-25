@@ -57,7 +57,7 @@ jobs:
           cache-dependency-path: backend/requirements*.txt
       - run: pip install -r requirements.txt -r requirements-dev.txt
         working-directory: backend
-      - run: pytest -q tests/test_postgres_configuration.py tests/test_vehicles.py tests/test_purchases.py
+      - run: pytest -q tests/test_postgres_configuration.py tests/test_vehicles.py tests/test_purchases.py tests/test_purchase_history.py
         working-directory: backend
       - run: alembic upgrade head
         working-directory: backend

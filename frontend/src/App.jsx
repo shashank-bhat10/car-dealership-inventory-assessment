@@ -1,11 +1,14 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { CarFront } from "lucide-react";
 import AuthScreen from "./components/AuthScreen.jsx";
+import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import InventoryScreen from "./components/InventoryScreen.jsx";
+import PurchaseHistory from "./components/PurchaseHistory.jsx";
 import VehicleDetails from "./components/VehicleDetails.jsx";
 import { apiRequest } from "./services/api.js";
 
 const emptyVehicleForm = () => ({ make: "", model: "", category: "", price: "", quantity: "" });
+const purchasePageSize = 50;
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("access_token") ?? "");
@@ -27,6 +30,25 @@ export default function App() {
   const [detailVehicle, setDetailVehicle] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
+  const [purchaseRecords, setPurchaseRecords] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+  const [historyHasMore, setHistoryHasMore] = useState(false);
+  const [confirmation, setConfirmation] = useState(null);
+  const [confirmationError, setConfirmationError] = useState("");
+  const [confirmationBusy, setConfirmationBusy] = useState(false);
+  const confirmationInFlight = useRef(false);
+  const historyOffset = useRef(0);
+  const historyRequestId = useRef(0);
+
+  function clearPurchaseHistory() {
+    historyRequestId.current += 1;
+    historyOffset.current = 0;
+    setPurchaseRecords([]);
+    setHistoryError("");
+    setHistoryHasMore(false);
+    setHistoryLoading(false);
+  }
 
   function navigate(path) {
     window.history.pushState({}, "", path);
@@ -68,12 +90,32 @@ export default function App() {
     }
   }, [token]);
 
+  const loadPurchaseHistory = useCallback(async ({ append = false } = {}) => {
+    const offset = append ? historyOffset.current : 0;
+    const requestId = ++historyRequestId.current;
+    setHistoryLoading(true);
+    setHistoryError("");
+    const endpoint = isAdmin ? "/api/admin/purchases" : "/api/purchases";
+    try {
+      const result = await apiRequest(`${endpoint}?limit=${purchasePageSize}&offset=${offset}`, {}, token);
+      if (requestId !== historyRequestId.current) return;
+      setPurchaseRecords((current) => append ? [...current, ...result] : result);
+      historyOffset.current = offset + result.length;
+      setHistoryHasMore(result.length === purchasePageSize);
+    } catch (error) {
+      if (requestId === historyRequestId.current) setHistoryError(error.message);
+    } finally {
+      if (requestId === historyRequestId.current) setHistoryLoading(false);
+    }
+  }, [isAdmin, token]);
+
   useEffect(() => {
     if (!token) return;
     const match = pathname.match(/^\/vehicles\/(\d+)\/?$/);
     if (match) loadVehicle(Number(match[1]));
+    else if (pathname === "/purchases") loadPurchaseHistory();
     else loadVehicles();
-  }, [token, pathname, loadVehicle, loadVehicles]);
+  }, [token, pathname, loadVehicle, loadVehicles, loadPurchaseHistory]);
 
   async function submitAccount(event) {
     event.preventDefault();
@@ -95,6 +137,7 @@ export default function App() {
       localStorage.setItem("access_token", result.access_token);
       localStorage.setItem("is_admin", String(Boolean(result.is_admin)));
       localStorage.setItem("account_email", email);
+      clearPurchaseHistory();
       setToken(result.access_token);
       setIsAdmin(Boolean(result.is_admin));
     } catch (error) {
@@ -106,14 +149,17 @@ export default function App() {
 
   async function purchase(vehicleId) {
     setNotice("");
-    try {
-      await apiRequest(`/api/vehicles/${vehicleId}/purchase`, { method: "POST" }, token);
-      setNotice("Purchase completed.");
-      if (pathname.startsWith("/vehicles/")) await loadVehicle(vehicleId);
-      else await loadVehicles(filters);
-    } catch (error) {
-      setInventoryError(error.message);
-    }
+    await apiRequest(`/api/vehicles/${vehicleId}/purchase`, { method: "POST" }, token);
+    setNotice("Inventory purchase recorded. No payment was processed.");
+    if (pathname.startsWith("/vehicles/")) await loadVehicle(vehicleId);
+    else await loadVehicles(filters);
+  }
+
+  async function deleteVehicle(vehicleId) {
+    await apiRequest(`/api/vehicles/${vehicleId}`, { method: "DELETE" }, token);
+    navigate("/");
+    setNotice("Vehicle deleted.");
+    await loadVehicles(filters);
   }
 
   async function saveVehicle(event) {
@@ -138,20 +184,43 @@ export default function App() {
   async function adminAction(vehicleId, action, body) {
     try {
       await apiRequest(`/api/vehicles/${vehicleId}${action}`, {
-        method: action === "/restock" ? "POST" : "DELETE",
-        ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       }, token);
-      if (action === "") {
-        navigate("/");
-        setNotice("Vehicle deleted.");
-        await loadVehicles(filters);
-      } else {
-        setNotice("Vehicle restocked.");
-        if (pathname.startsWith("/vehicles/")) await loadVehicle(vehicleId);
-        else await loadVehicles(filters);
-      }
+      setNotice("Vehicle restocked.");
+      if (pathname.startsWith("/vehicles/")) await loadVehicle(vehicleId);
+      else await loadVehicles(filters);
     } catch (error) {
       setInventoryError(error.message);
+    }
+  }
+
+  function openConfirmation(action, vehicle) {
+    setConfirmation({ action, vehicle });
+    setConfirmationError("");
+  }
+
+  const cancelConfirmation = useCallback(() => {
+    if (confirmationInFlight.current) return;
+    setConfirmation(null);
+    setConfirmationError("");
+  }, []);
+
+  async function confirmAction() {
+    if (!confirmation || confirmationInFlight.current) return;
+    confirmationInFlight.current = true;
+    setConfirmationBusy(true);
+    setConfirmationError("");
+    try {
+      if (confirmation.action === "purchase") await purchase(confirmation.vehicle.id);
+      else await deleteVehicle(confirmation.vehicle.id);
+      setConfirmation(null);
+    } catch (error) {
+      setConfirmationError(error.message || "The action could not be completed. Please try again.");
+    } finally {
+      confirmationInFlight.current = false;
+      setConfirmationBusy(false);
     }
   }
 
@@ -178,17 +247,26 @@ export default function App() {
   }
 
   const vehicleRoute = pathname.match(/^\/vehicles\/(\d+)\/?$/);
+  const historyRoute = pathname === "/purchases";
   return (
     <main className="app-shell mx-auto w-full">
       <header className="topbar">
         <a className="brand" href="/" onClick={(event) => { event.preventDefault(); navigate("/"); }}><span className="brand-icon"><CarFront size={21} /></span><span>MOTORHAUS<small>DRIVE YOUR WAY</small></span></a>
-        <div className="account-summary">{isAdmin && <span className="role-pill">Administrator</span>}<span>{localStorage.getItem("account_email")}</span><button className="text-button" onClick={() => { localStorage.clear(); setToken(""); setIsAdmin(false); }}>Sign out</button></div>
+        <div className="account-summary">
+          {isAdmin && <span className="role-pill">Administrator</span>}
+          <button type="button" className="text-button" onClick={() => navigate("/purchases")}>{isAdmin ? "Purchase History" : "My Purchases"}</button>
+          <span>{localStorage.getItem("account_email")}</span>
+          <button className="text-button" onClick={() => { localStorage.clear(); clearPurchaseHistory(); setToken(""); setIsAdmin(false); navigate("/"); }}>Sign out</button>
+        </div>
       </header>
-      {vehicleRoute ? (
-        <VehicleDetails vehicle={detailVehicle} isAdmin={isAdmin} loading={detailLoading} error={detailError || inventoryError} notice={notice} editing={editingId === detailVehicle?.id} values={vehicleForm} restockAmount={restockAmounts[detailVehicle?.id] ?? "1"} onBack={() => navigate("/")} onRetry={() => loadVehicle(Number(vehicleRoute[1]))} onPurchase={purchase} onEdit={editVehicle} onChange={updateVehicleForm} onSave={saveVehicle} onCancel={cancelEdit} onDelete={(id) => adminAction(id, "")} onRestockChange={updateRestockAmount} onRestock={(id, quantity) => adminAction(id, "/restock", { quantity })} />
+      {historyRoute ? (
+        <PurchaseHistory isAdmin={isAdmin} records={purchaseRecords} loading={historyLoading} error={historyError} hasMore={historyHasMore} onBack={() => navigate("/")} onRetry={() => loadPurchaseHistory()} onLoadMore={() => loadPurchaseHistory({ append: true })} />
+      ) : vehicleRoute ? (
+        <VehicleDetails vehicle={detailVehicle} isAdmin={isAdmin} loading={detailLoading} error={detailError || inventoryError} notice={notice} editing={editingId === detailVehicle?.id} values={vehicleForm} restockAmount={restockAmounts[detailVehicle?.id] ?? "1"} onBack={() => navigate("/")} onRetry={() => loadVehicle(Number(vehicleRoute[1]))} onPurchase={(vehicle) => openConfirmation("purchase", vehicle)} onEdit={editVehicle} onChange={updateVehicleForm} onSave={saveVehicle} onCancel={cancelEdit} onDelete={(vehicle) => openConfirmation("delete", vehicle)} onRestockChange={updateRestockAmount} onRestock={(id, quantity) => adminAction(id, "/restock", { quantity })} />
       ) : (
-        <InventoryScreen vehicles={vehicles} isAdmin={isAdmin} loading={loading} error={inventoryError} notice={notice} filters={filters} formValues={vehicleForm} editing={editingId !== null} restockAmounts={restockAmounts} onFilterChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))} onVehicleFormChange={updateVehicleForm} onSearch={() => loadVehicles(filters)} onSave={saveVehicle} onCancelEdit={cancelEdit} onRetry={() => loadVehicles(filters)} onNavigate={navigate} onPurchase={purchase} onEdit={editVehicle} onDelete={(id) => adminAction(id, "")} onRestockChange={updateRestockAmount} onRestock={(id, quantity) => adminAction(id, "/restock", { quantity })} />
+        <InventoryScreen vehicles={vehicles} isAdmin={isAdmin} loading={loading} error={inventoryError} notice={notice} filters={filters} formValues={vehicleForm} editing={editingId !== null} restockAmounts={restockAmounts} onFilterChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))} onVehicleFormChange={updateVehicleForm} onSearch={() => loadVehicles(filters)} onSave={saveVehicle} onCancelEdit={cancelEdit} onRetry={() => loadVehicles(filters)} onNavigate={navigate} onPurchase={(vehicle) => openConfirmation("purchase", vehicle)} onEdit={editVehicle} onDelete={(vehicle) => openConfirmation("delete", vehicle)} onRestockChange={updateRestockAmount} onRestock={(id, quantity) => adminAction(id, "/restock", { quantity })} />
       )}
+      {confirmation && <ConfirmDialog action={confirmation.action} vehicle={confirmation.vehicle} busy={confirmationBusy} error={confirmationError} onCancel={cancelConfirmation} onConfirm={confirmAction} />}
     </main>
   );
 }

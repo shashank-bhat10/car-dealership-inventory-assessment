@@ -82,7 +82,25 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .vehicle-specs dd { overflow-wrap: anywhere; margin: 4px 0 0; }
 .vehicle-detail-card .admin-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 8px; }
 .vehicle-detail-card .admin-form { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; padding: 0; border: 0; }
+.dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 18px; background: rgb(13 27 20 / 62%); }
+.confirm-dialog { width: min(100%, 520px); padding: 26px; border: 1px solid #dce2dd; background: #fff; box-shadow: 0 20px 65px rgb(0 0 0 / 25%); }
+.confirm-dialog h2 { margin: 0 0 12px; font: 400 27px Georgia, serif; }
+.confirm-dialog p { color: #56645b; font-size: 14px; line-height: 1.65; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.dialog-actions button { min-height: 42px; padding: 9px 16px; border: 1px solid #cdd8d0; background: #fff; color: #194c3a; font-weight: 700; cursor: pointer; }
+.dialog-actions .dialog-confirm { border-color: #194c3a; background: #194c3a; color: #fff; }
+.dialog-actions button:disabled { cursor: wait; opacity: .65; }
+.purchase-history > h1 { margin-bottom: 8px; }
+.purchase-history-list { display: grid; gap: 16px; margin-top: 28px; }
+.purchase-record { padding: 22px; border: 1px solid #e0e6e0; background: #fff; }
+.purchase-record h2 { margin: 8px 0 14px; font: 400 25px Georgia, serif; }
+.purchase-record-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.purchase-record-details div { min-width: 0; padding: 10px; background: #f7f8f5; }
+.purchase-record-details dt { color: #56645b; font-size: 11px; font-weight: 700; }
+.purchase-record-details dd { overflow-wrap: anywhere; margin: 4px 0 0; }
+.history-load-more { max-width: 260px; }
 @media (max-width: 760px) { .vehicle-detail-card { grid-template-columns: 1fr; } .vehicle-detail-card > .vehicle-art { min-height: 180px; } }
 @media (max-width: 900px) { .vehicle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .filters, .admin-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .auth-layout { grid-template-columns: 1fr; } .auth-visual { display: none; } .auth-panel { padding: 54px 0; } .app-shell { padding: 0 20px; } .page-content { padding: 42px 0; } .page-content h1 { font-size: 40px; } .vehicle-grid { grid-template-columns: 1fr; } .filters, .admin-form { grid-template-columns: 1fr; padding: 15px; } .filters .primary-button, .admin-form .primary-button { grid-column: auto; } .account-summary { gap: 8px; font-size: 10px; } .topbar { gap: 8px; } .admin-actions { grid-template-columns: repeat(2, auto); } }
+@media (max-width: 560px) { .dialog-actions { flex-direction: column-reverse; } .dialog-actions button { width: 100%; } .purchase-record-details { grid-template-columns: 1fr; } }
 @media (max-width: 400px) { .topbar { height: auto; align-items: flex-start; flex-direction: column; padding: 12px 0; } .account-summary { width: 100%; flex-wrap: wrap; justify-content: space-between; } }

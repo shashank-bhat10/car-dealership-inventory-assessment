@@ -42,7 +42,9 @@ async function installApiMock(page) {
   let inventory = [
     { id: 1, make: "Volvo", model: "XC60", category: "SUV", price: "48900.00", quantity: 2 },
   ];
+  let purchaseHistory = [];
   let nextId = 2;
+  let nextPurchaseId = 1;
 
   await page.route("**/api/**", async (route) => {
     const request = route.request();
@@ -63,6 +65,16 @@ async function installApiMock(page) {
     }
     if (url.pathname === "/api/auth/register") {
       await route.fulfill({ status: 201, json: { id: 2, email: body.email, is_admin: false } });
+      return;
+    }
+    if ((url.pathname === "/api/purchases" || url.pathname === "/api/admin/purchases") && request.method() === "GET") {
+      const isAdminHistory = url.pathname === "/api/admin/purchases";
+      const records = isAdminHistory
+        ? purchaseHistory
+        : purchaseHistory.filter((record) => record.purchaser_email === "customer@example.com");
+      const offset = Number(url.searchParams.get("offset") ?? 0);
+      const limit = Number(url.searchParams.get("limit") ?? 50);
+      await route.fulfill({ json: records.slice(offset, offset + limit) });
       return;
     }
     if (url.pathname === "/api/vehicles" && request.method() === "GET") {
@@ -94,11 +106,24 @@ async function installApiMock(page) {
       await route.fulfill({ json: inventory[vehicleIndex] });
     } else if (request.method() === "DELETE") {
       inventory = inventory.filter((vehicle) => vehicle.id !== vehicleId);
+      purchaseHistory = purchaseHistory.map((record) => record.vehicle_id === vehicleId ? { ...record, vehicle_id: null } : record);
       await route.fulfill({ status: 204, body: "" });
     } else if (action === "restock") {
       inventory[vehicleIndex].quantity += body.quantity;
       await route.fulfill({ json: inventory[vehicleIndex] });
     } else if (action === "purchase") {
+      const purchased = inventory[vehicleIndex];
+      const isAdmin = request.headers()["authorization"] === "Bearer admin-token";
+      purchaseHistory.unshift({
+        id: nextPurchaseId++,
+        purchaser_id: isAdmin ? 1 : 2,
+        purchaser_email: isAdmin ? "admin@example.com" : "customer@example.com",
+        vehicle_id: vehicleId,
+        make: purchased.make,
+        model: purchased.model,
+        unit_price: purchased.price,
+        purchased_at: new Date().toISOString(),
+      });
       inventory[vehicleIndex].quantity -= 1;
       await route.fulfill({ json: inventory[vehicleIndex] });
     } else {
@@ -163,12 +188,43 @@ async function assertKeyboardFocus(page, viewport, screen) {
 }
 
 async function assertNoAxeViolations(page, viewport, screen) {
-  await page.addScriptTag({ path: path.join(frontendDirectory, "node_modules", "axe-core", "axe.min.js") });
+  if (!(await page.evaluate(() => Boolean(window.axe)))) {
+    await page.addScriptTag({ path: path.join(frontendDirectory, "node_modules", "axe-core", "axe.min.js") });
+  }
   const results = await page.evaluate(async () => window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } }));
   for (const violation of results.violations) {
     const nodes = violation.nodes.map((node) => `${node.target.join(" ")}: ${node.any.map((check) => check.message).join(" ")}`).join("; ");
     recordFailure(viewport, screen, `axe ${violation.id} (${violation.impact}): ${nodes}`);
   }
+}
+
+async function auditDialog(page, viewport, screen, captureName) {
+  await assertNoHorizontalOverflow(page, viewport, screen);
+  await assertLabeledControls(page, viewport, screen);
+  await assertNoAxeViolations(page, viewport, screen);
+  const focusState = await page.evaluate(() => ({
+    inside: Boolean(document.querySelector('[role="alertdialog"]')?.contains(document.activeElement)),
+    label: document.activeElement?.innerText?.trim(),
+  }));
+  if (!focusState.inside || focusState.label !== "Cancel") recordFailure(viewport, screen, `dialog did not initially focus Cancel (${JSON.stringify(focusState)})`);
+  if (screenshotsRequested && viewport.width === 1440) {
+    await page.evaluate(() => {
+      document.activeElement?.blur();
+      window.scrollTo({ top: 0, behavior: "instant" });
+    });
+    await page.screenshot({ path: path.join(screenshotDirectory, captureName), fullPage: false });
+  }
+  await page.keyboard.press("Shift+Tab");
+  if ((await page.evaluate(() => document.activeElement?.innerText?.trim())) !== "Confirm purchase" && screen.includes("purchase")) {
+    recordFailure(viewport, screen, "Shift+Tab did not cycle focus to the last dialog action");
+  }
+  if (!screen.includes("purchase") && (await page.evaluate(() => document.activeElement?.innerText?.trim())) !== "Delete vehicle") {
+    recordFailure(viewport, screen, "Shift+Tab did not cycle focus to the last dialog action");
+  }
+  await page.keyboard.press("Tab");
+  if ((await page.evaluate(() => document.activeElement?.innerText?.trim())) !== "Cancel") recordFailure(viewport, screen, "Tab did not cycle focus back to Cancel");
+  await page.keyboard.press("Escape");
+  await page.getByRole("alertdialog").waitFor({ state: "hidden" });
 }
 
 async function assertDetailsHeaderSpacing(page, viewport, screen) {
@@ -222,17 +278,33 @@ async function runViewport(viewport) {
   await auditScreen(page, viewport, "customer inventory", "customer-inventory.png");
   await page.getByLabel("Make").fill("Volvo");
   await page.getByRole("button", { name: "Search inventory" }).click();
-  await page.getByRole("button", { name: "Purchase" }).click();
+  await page.getByRole("button", { name: "Purchase", exact: true }).click();
   const purchaseDialog = page.getByRole("alertdialog");
   await purchaseDialog.waitFor({ state: "visible" });
   if (!(await purchaseDialog.innerText()).includes("does not process payment")) recordFailure(viewport, "customer inventory", "purchase confirmation omitted the simulated-purchase notice");
+  await auditDialog(page, viewport, "purchase confirmation", "purchase-confirmation.png");
+  await page.getByRole("button", { name: "Purchase", exact: true }).click();
+  await page.getByRole("alertdialog").waitFor({ state: "visible" });
+  if (screenshotsRequested && viewport.width === 1440) {
+    await page.screenshot({ path: path.join(screenshotDirectory, "purchase-confirmation.png"), fullPage: true });
+  }
   await page.getByRole("button", { name: "Confirm purchase" }).click();
   await page.getByText("1 in stock").waitFor();
+  await page.getByRole("button", { name: "My Purchases" }).click();
+  await page.getByRole("heading", { name: "My Purchases" }).waitFor();
+  await page.getByText("Simulated inventory records only. No payment is processed.").waitFor();
+  await page.getByRole("heading", { name: "Volvo XC60" }).waitFor();
+  await auditScreen(page, viewport, "customer purchase history", "purchase-history.png");
+  await page.getByRole("button", { name: /back to inventory/i }).click();
+  await page.getByRole("heading", { name: "Available vehicles" }).waitFor();
   await page.getByRole("link", { name: "Volvo XC60" }).click();
   await page.getByRole("heading", { name: "Volvo XC60" }).waitFor();
   await page.getByText("Vehicle ID").waitFor();
   await auditScreen(page, viewport, "vehicle details", "vehicle-details.png");
-  await page.getByRole("button", { name: "Purchase" }).click();
+  await page.getByRole("button", { name: "Purchase", exact: true }).click();
+  await page.getByRole("alertdialog").waitFor({ state: "visible" });
+  await auditDialog(page, viewport, "purchase confirmation on details", "purchase-confirmation-details.png");
+  await page.getByRole("button", { name: "Purchase", exact: true }).click();
   await page.getByRole("alertdialog").waitFor({ state: "visible" });
   await page.getByRole("button", { name: "Confirm purchase" }).click();
   await page.getByRole("button", { name: "Out of stock" }).waitFor({ state: "visible" });
@@ -244,6 +316,12 @@ async function runViewport(viewport) {
   await page.getByRole("button", { name: "Sign out" }).click();
   await signIn(page, "admin@example.com");
   await auditScreen(page, viewport, "admin inventory", "admin-inventory.png");
+  await page.getByRole("button", { name: "Purchase History" }).click();
+  await page.getByRole("heading", { name: "Purchase History" }).waitFor();
+  await page.getByText("customer@example.com", { exact: true }).first().waitFor();
+  await auditScreen(page, viewport, "administrator purchase history", "purchase-history-admin.png");
+  await page.getByRole("button", { name: /back to inventory/i }).click();
+  await page.getByRole("heading", { name: "Available vehicles" }).waitFor();
   for (const [label, value] of Object.entries({
     "Vehicle make": "Honda",
     "Vehicle model": "Civic",
@@ -265,10 +343,13 @@ async function runViewport(viewport) {
   await page.getByText("5 in stock").waitFor();
   await page.getByRole("button", { name: "Delete" }).click();
   await page.getByRole("alertdialog").waitFor({ state: "visible" });
+  await auditDialog(page, viewport, "delete confirmation", "vehicle-delete-confirmation.png");
+  await page.getByRole("button", { name: "Delete" }).click();
+  await page.getByRole("alertdialog").waitFor({ state: "visible" });
   await page.getByRole("button", { name: "Delete vehicle" }).click();
   await page.getByRole("heading", { name: "Honda Civic Touring" }).waitFor({ state: "detached" });
 
-  console.log(`PASS ${viewport.width}x${viewport.height}: sign-in, customer inventory/details, and admin inventory/details`);
+  console.log(`PASS ${viewport.width}x${viewport.height}: sign-in, customer/admin inventory and history, details, confirmations`);
   await context.close();
 }
 
@@ -286,7 +367,7 @@ try {
     for (const failure of failures) console.error(`- ${failure}`);
     process.exitCode = 1;
   } else {
-    console.log(`All ${viewports.length * 5} screen/viewport combinations passed overflow, control, focus, and axe checks.`);
+    console.log(`All audited screen/viewport combinations passed overflow, control, focus, and axe checks.`);
   }
 } finally {
   await browser?.close();
