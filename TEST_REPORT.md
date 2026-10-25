@@ -25,9 +25,9 @@ Working directory: `frontend`; pnpm `11.25.0`, Vitest `3.0.7`, Vite `6.1.0`.
 
 | Command | Observed result |
 | --- | --- |
-| `pnpm test` | **8 passed** in 2.71s after the final responsive style change. |
+| `pnpm test` | **14 passed** in 1.81s on 2026-10-25, including registration/login, all five search query filters, loading/empty/error/retry states, out-of-stock purchase disablement, and admin POST/PUT/DELETE/restock requests and outcomes. |
 | `pnpm lint` | **Passed** (ESLint; no findings). |
-| `pnpm build` | **Passed**; Vite transformed 1,579 modules; output 10.82 kB CSS and 196.84 kB JS before gzip. |
+| `pnpm build` | **Passed**; Vite transformed 1,579 modules; output 10.82 kB CSS and 196.98 kB JS before gzip. |
 | `pnpm exec node capture.mjs` (one-off Playwright 1.64.1 script) | Captured real authenticated customer and administrator screens from the local SPA/API. The capture script was temporary and was not retained in the repository. |
 
 Package-install warnings observed: deprecated `eslint@9.19.0` and transitive `whatwg-encoding@3.1.1`. The build and lint did not emit project errors.
@@ -36,7 +36,25 @@ Package-install warnings observed: deprecated `eslint@9.19.0` and transitive `wh
 
 GitHub Actions run [40179145568](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40179145568) on `ce37690`: frontend job passed; backend Ruff passed; backend pytest collection failed because `httpx` was missing; Alembic skipped. After pinning `httpx==0.28.1`, clean local `.venv` tests passed. GitHub Actions run [40179376846](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40179376846) on `591a679`: frontend job and backend Ruff passed; pytest collection failed again because the `app` package was not importable in the runner; Alembic skipped. Added job-level `PYTHONPATH: .`; run [40179459445](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40179459445) on `24f8d1d` passed both jobs. Backend Ruff passed, 19 tests passed with 97% coverage, Alembic passed; frontend install, 8 tests, lint, and production build passed.
 
-Warnings in successful CI run: Starlette's `anyio.abc.BlockingPortal` deprecation; GitHub runner Node.js deprecations from `actions/checkout@v4`, `actions/setup-python@v5`, `actions/setup-node@v4`, and `pnpm/action-setup@v4`; Node deprecations `DEP0040` (`punycode`) and `DEP0169` (`url.parse`) from action tooling. These warnings were not suppressed. This report update triggers another CI run; run `40179459445` is the latest observed completed result during preparation. Local fresh SQLite migration passed. PostgreSQL service availability was not established; PostgreSQL behavior remains unverified.
+Warnings in successful CI run: Starlette's `anyio.abc.BlockingPortal` deprecation; GitHub runner Node.js deprecations from `actions/checkout@v4`, `actions/setup-python@v5`, `actions/setup-node@v4`, and `pnpm/action-setup@v4`; Node deprecations `DEP0040` (`punycode`) and `DEP0169` (`url.parse`) from action tooling. These warnings were not suppressed. Run [40179570241](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40179570241) on commit `fea340d32a758e95c9d01b8b184a6593d115a951` completed successfully; both backend and frontend jobs passed. That run is the last completed remote run before the final-audit commits. Local fresh SQLite migration passed. PostgreSQL service availability was not established; PostgreSQL behavior remains unverified.
+
+## Final-audit local rerun (2026-10-25)
+
+Commands were run from the `backend` and `frontend` directories of branch `submission/tdd-kata` after the inventory retry change:
+
+| Exact command | Observed result |
+| --- | --- |
+| `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest -q` | **19 passed**, 1 upstream Starlette/AnyIO `BlockingPortal` deprecation warning, 5.31s. |
+| `.\.venv\Scripts\python.exe -m ruff check app tests` | **All checks passed!** |
+| `$env:DATABASE_URL='sqlite:///./fresh-final-audit-20261025.db'; .\.venv\Scripts\python.exe -m alembic -c alembic.ini upgrade head` | **Passed**; applied `0001_initial` to a fresh SQLite file. PostgreSQL was not tested. |
+| `pnpm test` | **14 passed**, 1 test file, 1.81s. |
+| `pnpm lint` | **Passed**, no findings. |
+| `pnpm build` | **Passed**, Vite transformed 1,579 modules; CSS 10.82 kB and JS 196.98 kB before gzip. |
+| `git diff --check` | **Passed** on the final changes. |
+
+The final-audit test-first red run was `pnpm exec vitest run src/App.test.jsx`: **13 passed, 1 failed** at the new check that an inventory error must not display the empty state. After the error/retry implementation, the same command reported **14 passed**. The exact red and green commit pair is recorded in `TDD_LOG.md`. No PostgreSQL service test or screen-reader/device compatibility matrix was run.
+
+The latest run available before these final-audit commits is run `40179570241` on `fea340d32a758e95c9d01b8b184a6593d115a951`; its backend and frontend jobs succeeded. A new Actions run for the final pushed commit will be recorded after it completes.
 
 ## TDD evidence
 

@@ -17,11 +17,11 @@ Status reflects checks actually run in this build; evidence paths are repository
 | Unique identifiers and field validation | SQL primary key, Pydantic constraints, API validation tests | Verified |
 | React registration/login and inventory UI | `frontend/src/App.jsx`, `frontend/src/App.test.jsx` | Verified |
 | Purchase disabled at zero stock | dashboard control and UI test | Verified |
-| Admin add/update/delete/restock controls | dashboard controls and admin UI test | Partial (admin screen/control rendering tested; CRUD interactions are exercised at API layer) |
-| Responsive/accessibility/loading/empty/error states | `frontend/src/style.css`, semantic labels/roles in `App.jsx` | Partial (labels and states implemented; no automated screen-reader or device matrix) |
+| Admin add/update/delete/restock controls | dashboard workflows and `frontend/src/App.test.jsx` POST add, PUT edit, DELETE, POST restock request/outcome tests | Verified |
+| Responsive/accessibility/loading/empty/error states | `frontend/src/style.css`, semantic labels/roles and retry flow in `App.jsx`; loading, empty, error/retry tests in `App.test.jsx` | Partial (responsive CSS, labels, focus states, and states are implemented; no automated screen-reader or device matrix) |
 | SPA/API browser origin access | configurable `FRONTEND_ORIGIN` CORS middleware and `backend/tests/test_cors.py` | Verified |
 | Backend and frontend tests | test suites in `backend/tests` and `frontend/src` | Verified |
-| CI tests, lint and production build | `.github/workflows/ci.yml`, GitHub Actions run `40179459445` | Verified (backend and frontend jobs succeeded) |
+| CI tests, lint and production build | `.github/workflows/ci.yml`, GitHub Actions run `40179570241` on `fea340d32a758e95c9d01b8b184a6593d115a951`; final audit commit run pending | Verified for checkpoint commit; final audit commit pending remote CI |
 | Red–Green–Refactor commit evidence | `TDD_LOG.md`, actual branch history | Verified (test-first red/green commits and a separate lint-driven refactor; no unhelpful refactor commits were added) |
 | Screenshots from running application | `screenshots/customer-inventory.png`, `screenshots/admin-inventory.png` | Verified (captured from running local SPA/API with Playwright and visually inspected) |
 | Genuine prompt record | `PROMPTS.md` | Unverified (no unedited transcript export/build-only share link available) |
