@@ -70,6 +70,18 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .state-message { padding: 30px 0; }
 .error-message[role="alert"] { padding: 12px; background: #fff0ed; color: #9d3c36; }
 .page-content > [role="status"] { color: #194c3a; }
+.back-link { display: inline-flex; align-items: center; min-height: 32px; margin: 0 0 20px; text-decoration: none; }
+.vehicle-detail-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); overflow: hidden; border: 1px solid #e0e6e0; background: #fff; }
+.vehicle-detail-card > .vehicle-art { min-height: 100%; }
+.vehicle-detail-card .vehicle-details { align-content: start; padding: clamp(18px, 4vw, 36px); }
+.vehicle-detail-card .vehicle-details h1 { grid-column: 1 / -1; margin: 0; font: 400 clamp(30px, 4vw, 46px)/1.1 Georgia, serif; }
+.vehicle-specs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 10px 0; }
+.vehicle-specs div { min-width: 0; padding: 10px; background: #f7f8f5; }
+.vehicle-specs dt { color: #56645b; font-size: 11px; font-weight: 700; }
+.vehicle-specs dd { overflow-wrap: anywhere; margin: 4px 0 0; }
+.vehicle-detail-card .admin-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 8px; }
+.vehicle-detail-card .admin-form { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; padding: 0; border: 0; }
+@media (max-width: 760px) { .vehicle-detail-card { grid-template-columns: 1fr; } .vehicle-detail-card > .vehicle-art { min-height: 180px; } }
 @media (max-width: 900px) { .vehicle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .filters, .admin-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .auth-layout { grid-template-columns: 1fr; } .auth-visual { display: none; } .auth-panel { padding: 54px 0; } .app-shell { padding: 0 20px; } .page-content { padding: 42px 0; } .page-content h1 { font-size: 40px; } .vehicle-grid { grid-template-columns: 1fr; } .filters, .admin-form { grid-template-columns: 1fr; padding: 15px; } .filters .primary-button, .admin-form .primary-button { grid-column: auto; } .account-summary { gap: 8px; font-size: 10px; } .topbar { gap: 8px; } .admin-actions { grid-template-columns: repeat(2, auto); } }
 @media (max-width: 400px) { .topbar { height: auto; align-items: flex-start; flex-direction: column; padding: 12px 0; } .account-summary { width: 100%; flex-wrap: wrap; justify-content: space-between; } }

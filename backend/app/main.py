@@ -178,6 +178,18 @@ def search_vehicles(
     return list(session.scalars(statement).all())
 
 
+@app.get("/api/vehicles/{vehicle_id}", response_model=VehicleResponse)
+def get_vehicle(
+    vehicle_id: int,
+    session: Session = Depends(get_session),
+    _user: User = Depends(get_current_user),
+):
+    vehicle = session.get(Vehicle, vehicle_id)
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    return vehicle
+
+
 @app.post("/api/vehicles", response_model=VehicleResponse, status_code=201)
 def create_vehicle(
     data: VehicleRequest,

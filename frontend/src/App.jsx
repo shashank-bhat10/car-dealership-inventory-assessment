@@ -19,6 +19,23 @@ export default function App() {
   const [editingId, setEditingId] = useState(null);
   const [vehicleForm, setVehicleForm] = useState({ make: "", model: "", category: "", price: "", quantity: "" });
   const [restockAmounts, setRestockAmounts] = useState({});
+  const [pathname, setPathname] = useState(window.location.pathname);
+  const [detailVehicle, setDetailVehicle] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+
+  const navigate = (path) => {
+    window.history.pushState({}, "", path);
+    setPathname(path);
+    setNotice("");
+    setDetailError("");
+  };
+
+  useEffect(() => {
+    const handlePopState = () => setPathname(window.location.pathname);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   async function request(path, options = {}) {
     const headers = new Headers(options.headers ?? {});
@@ -42,12 +59,26 @@ export default function App() {
     }
   }, [token]);
 
+  const loadVehicle = useCallback(async (vehicleId) => {
+    setDetailLoading(true);
+    setDetailError("");
+    try {
+      setDetailVehicle(await request(`/api/vehicles/${vehicleId}`));
+    } catch (requestError) {
+      setDetailVehicle(null);
+      setDetailError(requestError.message);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, [token]);
+
   async function purchase(vehicleId) {
     setNotice("");
     try {
       await request(`/api/vehicles/${vehicleId}/purchase`, { method: "POST" });
       setNotice("Purchase completed.");
-      await loadVehicles(filters);
+      if (pathname.startsWith("/vehicles/")) await loadVehicle(vehicleId);
+      else await loadVehicles(filters);
     } catch (requestError) { setInventoryError(requestError.message); }
   }
 
@@ -62,7 +93,8 @@ export default function App() {
       setNotice(editingId ? "Vehicle updated." : "Vehicle added.");
       setEditingId(null);
       setVehicleForm({ make: "", model: "", category: "", price: "", quantity: "" });
-      await loadVehicles(filters);
+      if (pathname.startsWith("/vehicles/")) await loadVehicle(editingId);
+      else await loadVehicles(filters);
     } catch (requestError) { setInventoryError(requestError.message); }
   }
 
@@ -72,14 +104,24 @@ export default function App() {
         method: action === "/restock" ? "POST" : "DELETE",
         ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
       });
-      setNotice(action === "/restock" ? "Vehicle restocked." : "Vehicle deleted.");
-      await loadVehicles(filters);
+      if (action === "") {
+        navigate("/");
+        setNotice("Vehicle deleted.");
+        await loadVehicles(filters);
+      } else {
+        setNotice("Vehicle restocked.");
+        if (pathname.startsWith("/vehicles/")) await loadVehicle(vehicleId);
+        else await loadVehicles(filters);
+      }
     } catch (requestError) { setInventoryError(requestError.message); }
   }
 
   useEffect(() => {
-    if (token) loadVehicles();
-  }, [token, loadVehicles]);
+    if (!token) return;
+    const vehicleRoute = pathname.match(/^\/vehicles\/(\d+)\/?$/);
+    if (vehicleRoute) loadVehicle(Number(vehicleRoute[1]));
+    else loadVehicles();
+  }, [token, pathname, loadVehicles, loadVehicle]);
 
   async function submitAccount(event) {
     event.preventDefault();
@@ -111,10 +153,12 @@ export default function App() {
   }
 
   if (token) {
+    const vehicleRoute = pathname.match(/^\/vehicles\/(\d+)\/?$/);
+    const viewingVehicle = Boolean(vehicleRoute);
     return (
           <main className="app-shell mx-auto w-full">
         <header className="topbar">
-          <a className="brand" href="#inventory">
+          <a className="brand" href="/" onClick={(event) => { event.preventDefault(); navigate("/"); }}>
             <span className="brand-icon"><CarFront size={21} /></span>
             <span>MOTORHAUS<small>DRIVE YOUR WAY</small></span>
           </a>
@@ -128,7 +172,42 @@ export default function App() {
             }}>Sign out</button>
           </div>
         </header>
-        <section id="inventory" className="page-content">
+        {viewingVehicle ? <section className="page-content vehicle-page">
+          <a className="text-button back-link" href="/" onClick={(event) => { event.preventDefault(); navigate("/"); }}>← Back to inventory</a>
+          {detailLoading && <p role="status" className="state-message">Loading vehicle details…</p>}
+          {detailError && <div className="inventory-error"><p role="alert" className="error-message">{detailError}</p><button type="button" onClick={() => loadVehicle(Number(vehicleRoute[1]))}>Retry vehicle details</button></div>}
+          {detailVehicle && <>
+            <span className="eyebrow">VEHICLE DETAILS</span>
+            <article className="vehicle-detail-card">
+              <div className="vehicle-art vehicle-art-0" aria-hidden="true"><CarFront size={140} strokeWidth={0.8} /></div>
+              <div className="vehicle-details">
+                <span className="vehicle-category">{detailVehicle.category}</span>
+                <h1>{detailVehicle.make} {detailVehicle.model}</h1>
+                <strong>${Number(detailVehicle.price).toLocaleString("en-US", { maximumFractionDigits: 0 })}</strong>
+                <dl className="vehicle-specs">
+                  <div><dt>Make</dt><dd>{detailVehicle.make}</dd></div>
+                  <div><dt>Model</dt><dd>{detailVehicle.model}</dd></div>
+                  <div><dt>Category</dt><dd>{detailVehicle.category}</dd></div>
+                  <div><dt>Price</dt><dd>${Number(detailVehicle.price).toLocaleString("en-US", { maximumFractionDigits: 2 })}</dd></div>
+                  <div><dt>Vehicle ID</dt><dd>{detailVehicle.id}</dd></div>
+                  <div><dt>Stock</dt><dd>{detailVehicle.quantity > 0 ? `${detailVehicle.quantity} in stock` : "Out of stock"}</dd></div>
+                </dl>
+                <button className="primary-button flex items-center justify-between rounded-sm transition-colors duration-150" disabled={detailVehicle.quantity === 0} onClick={() => purchase(detailVehicle.id)}>{detailVehicle.quantity > 0 ? "Purchase" : "Out of stock"}</button>
+                {isAdmin && <section className="admin-actions" aria-label="Administrator vehicle actions">
+                  {editingId === detailVehicle.id ? <form className="admin-form" onSubmit={saveVehicle}>
+                    <h2>Edit vehicle</h2>
+                    {["make", "model", "category", "price", "quantity"].map((key) => <label key={key}>Vehicle {key}<input aria-label={`Vehicle ${key}`} required type={key === "price" || key === "quantity" ? "number" : "text"} min={key === "price" ? "0.01" : key === "quantity" ? "0" : undefined} step={key === "price" ? "0.01" : key === "quantity" ? "1" : undefined} value={vehicleForm[key]} onChange={(event) => setVehicleForm({ ...vehicleForm, [key]: event.target.value })} /></label>)}
+                    <button className="primary-button" type="submit">Save vehicle</button>
+                    <button type="button" onClick={() => setEditingId(null)}>Cancel edit</button>
+                  </form> : <button type="button" onClick={() => { setEditingId(detailVehicle.id); setVehicleForm({ make: detailVehicle.make, model: detailVehicle.model, category: detailVehicle.category, price: String(detailVehicle.price), quantity: String(detailVehicle.quantity) }); }}>Edit</button>}
+                  <button type="button" onClick={() => adminAction(detailVehicle.id, "")}>Delete</button>
+                  <label>Restock quantity<input aria-label={`Restock quantity for ${detailVehicle.make} ${detailVehicle.model}`} type="number" min="1" value={restockAmounts[detailVehicle.id] ?? "1"} onChange={(event) => setRestockAmounts({ ...restockAmounts, [detailVehicle.id]: event.target.value })} /></label>
+                  <button type="button" onClick={() => adminAction(detailVehicle.id, "/restock", { quantity: Number(restockAmounts[detailVehicle.id] ?? 1) })}>Restock</button>
+                </section>}
+              </div>
+            </article>
+          </>}
+        </section> : <section id="inventory" className="page-content">
           <span className="eyebrow">THE MOTORHAUS COLLECTION</span>
           <div className="inventory-heading">
             <div><h1>Available vehicles</h1><p>Your next drive starts here.</p></div>
@@ -164,7 +243,7 @@ export default function App() {
                   </div>
                   <div className="vehicle-details">
                     <span className="vehicle-category">{vehicle.category}</span>
-                    <h2>{vehicle.make} {vehicle.model}</h2>
+                    <h2><a href={`/vehicles/${vehicle.id}`} onClick={(event) => { event.preventDefault(); navigate(`/vehicles/${vehicle.id}`); }}>{vehicle.make} {vehicle.model}</a></h2>
                     <strong>${Number(vehicle.price).toLocaleString("en-US", { maximumFractionDigits: 0 })}</strong>
                     <span className={vehicle.quantity > 0 ? "stock-label" : "stock-label sold-out"}>
                       {vehicle.quantity > 0 ? `${vehicle.quantity} in stock` : "Out of stock"}
@@ -183,7 +262,7 @@ export default function App() {
           ) : !inventoryError ? (
             <div className="empty-state"><CarFront size={34} /><h2>No vehicles found</h2><p>Check back soon or adjust your search.</p></div>
           ) : null}
-        </section>
+        </section>}
       </main>
     );
   }

@@ -94,6 +94,15 @@ describe("inventory dashboard", () => {
     expect(screen.getByText("4 in stock")).toBeTruthy();
   });
 
+  it("provides a stable details link from each inventory card", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response([vehicle])));
+    render(<App />);
+
+    const detailsLink = await screen.findByRole("link", { name: "Volvo XC60" });
+    expect(detailsLink.getAttribute("href")).toBe("/vehicles/1");
+  });
+
   it("searches vehicles by make, category, and price range", async () => {
     localStorage.setItem("access_token", "customer-token");
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [] });
@@ -234,9 +243,9 @@ describe("shareable vehicle details", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Volvo XC60" })).toBeTruthy();
-    expect(screen.getByText("SUV")).toBeTruthy();
-    expect(screen.getByText("$48,900")).toBeTruthy();
-    expect(screen.getByText("2 in stock")).toBeTruthy();
+    expect(screen.getByText("Category").parentElement.querySelector("dd").textContent).toBe("SUV");
+    expect(screen.getByText("Price").parentElement.querySelector("dd").textContent).toBe("$48,900");
+    expect(screen.getByText("Stock").parentElement.querySelector("dd").textContent).toBe("2 in stock");
     expect(screen.getByRole("link", { name: /back to inventory/i }).getAttribute("href")).toBe("/");
     expect(fetchMock.mock.calls[0][0]).toBe("/api/vehicles/1");
     expect(fetchMock.mock.calls[0][1].headers.get("Authorization")).toBe("Bearer customer-token");
@@ -249,7 +258,7 @@ describe("shareable vehicle details", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("Out of stock")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Out of stock" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Out of stock" }).hasAttribute("disabled")).toBe(true);
   });
 
@@ -264,6 +273,50 @@ describe("shareable vehicle details", () => {
     expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Restock" })).toBeNull();
+  });
+
+  it("lets an administrator edit a vehicle from its details page", async () => {
+    localStorage.setItem("access_token", "admin-token");
+    localStorage.setItem("is_admin", "true");
+    window.history.replaceState({}, "", "/vehicles/1");
+    const updated = { ...vehicle, model: "XC90" };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response(vehicle))
+      .mockResolvedValueOnce(response(updated))
+      .mockResolvedValueOnce(response(updated));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Volvo XC60" });
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    fireEvent.change(screen.getByLabelText("Vehicle model"), { target: { value: "XC90" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save vehicle" }));
+
+    expect(await screen.findByRole("heading", { name: "Volvo XC90" })).toBeTruthy();
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/vehicles/1");
+    expect(fetchMock.mock.calls[1][1].method).toBe("PUT");
+  });
+
+  it("lets an administrator restock a vehicle from its details page", async () => {
+    localStorage.setItem("access_token", "admin-token");
+    localStorage.setItem("is_admin", "true");
+    window.history.replaceState({}, "", "/vehicles/1");
+    const restocked = { ...vehicle, quantity: 6 };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response(vehicle))
+      .mockResolvedValueOnce(response(restocked))
+      .mockResolvedValueOnce(response(restocked));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Volvo XC60" });
+    fireEvent.change(screen.getByLabelText("Restock quantity for Volvo XC60"), { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("button", { name: "Restock" }));
+
+    expect(await screen.findByText("6 in stock")).toBeTruthy();
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/vehicles/1/restock");
+    expect(fetchMock.mock.calls[1][1].method).toBe("POST");
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ quantity: 4 });
   });
 });
 
