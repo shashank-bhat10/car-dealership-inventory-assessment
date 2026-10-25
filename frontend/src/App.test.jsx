@@ -222,6 +222,51 @@ describe("inventory dashboard", () => {
   });
 });
 
+describe("shareable vehicle details", () => {
+  afterEach(() => window.history.replaceState({}, "", "/"));
+
+  it("loads a vehicle directly by its stable URL and links back to inventory", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    window.history.replaceState({}, "", "/vehicles/1");
+    const fetchMock = vi.fn().mockResolvedValue(response(vehicle));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Volvo XC60" })).toBeTruthy();
+    expect(screen.getByText("SUV")).toBeTruthy();
+    expect(screen.getByText("$48,900")).toBeTruthy();
+    expect(screen.getByText("2 in stock")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /back to inventory/i }).getAttribute("href")).toBe("/");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/vehicles/1");
+    expect(fetchMock.mock.calls[0][1].headers.get("Authorization")).toBe("Bearer customer-token");
+  });
+
+  it("shows a purchase button disabled when the detail has no stock", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    window.history.replaceState({}, "", "/vehicles/1");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ ...vehicle, quantity: 0 })));
+
+    render(<App />);
+
+    expect(await screen.findByText("Out of stock")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Out of stock" }).hasAttribute("disabled")).toBe(true);
+  });
+
+  it("does not show administrator actions to a customer", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    window.history.replaceState({}, "", "/vehicles/1");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(vehicle)));
+
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Volvo XC60" });
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Restock" })).toBeNull();
+  });
+});
+
 const vehicle = { id: 1, make: "Volvo", model: "XC60", category: "SUV", price: "48900.00", quantity: 2 };
 
 function response(data, ok = true) {

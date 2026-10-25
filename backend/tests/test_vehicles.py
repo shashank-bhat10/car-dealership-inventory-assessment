@@ -116,6 +116,25 @@ def test_vehicle_update_reports_missing_id():
     assert client.put("/api/vehicles/888", json=payload(), headers=headers).status_code == 404
 
 
+def test_get_vehicle_requires_authentication_and_returns_complete_vehicle():
+    headers = authenticated_headers()
+    created = client.post("/api/vehicles", json=payload(), headers=headers)
+    vehicle_id = created.json()["id"]
+
+    assert client.get(f"/api/vehicles/{vehicle_id}").status_code == 401
+    response = client.get(f"/api/vehicles/{vehicle_id}", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json() == created.json()
+
+
+def test_get_vehicle_reports_missing_vehicle():
+    response = client.get("/api/vehicles/999999", headers=authenticated_headers())
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Vehicle not found"
+
+
 @pytest.mark.parametrize(
     "price,quantity",
     [(0, 1), (-1, 1), (1, -1), (1, 100001)],
