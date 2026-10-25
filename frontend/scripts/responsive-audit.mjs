@@ -201,7 +201,7 @@ async function signIn(page, email) {
   await page.goto(baseUrl);
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill("Safe-Drive-2046");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByLabel("Password").press("Enter");
   await page.getByRole("heading", { name: "Available vehicles" }).waitFor();
   await page.getByRole("heading", { name: "Volvo XC60" }).waitFor();
 }
@@ -216,7 +216,7 @@ async function runViewport(viewport) {
   await auditScreen(page, viewport, "sign-in", "sign-in.png");
   await page.getByLabel("Email address").fill("customer@example.com");
   await page.getByLabel("Password").fill("Safe-Drive-2046");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByLabel("Password").press("Enter");
   await page.getByRole("heading", { name: "Volvo XC60" }).waitFor();
 
   await auditScreen(page, viewport, "customer inventory", "customer-inventory.png");
@@ -231,7 +231,8 @@ async function runViewport(viewport) {
   await page.getByRole("button", { name: "Purchase" }).click();
   await page.getByRole("button", { name: "Out of stock" }).waitFor({ state: "visible" });
   if (!(await page.getByRole("button", { name: "Out of stock" }).isDisabled())) recordFailure(viewport, "vehicle details", "zero-stock purchase button is enabled");
-  await page.getByRole("link", { name: /back to inventory/i }).click();
+  await page.getByRole("link", { name: /back to inventory/i }).focus();
+  await page.keyboard.press("Enter");
   await page.getByRole("heading", { name: "Available vehicles" }).waitFor();
 
   await page.getByRole("button", { name: "Sign out" }).click();
