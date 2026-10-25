@@ -50,6 +50,18 @@ uvicorn app.main:app --reload
 
 The offline admin command prompts for an email and password twice. It creates an administrator or promotes an existing account and sets the password entered at the prompt. Public registration always creates a customer, including when its email matches an administrator's address. Register customer accounts through the SPA or `POST /api/auth/register`.
 
+### Load local demo inventory
+
+After activating the backend virtual environment, setting `ENVIRONMENT=development` and a local SQLite `DATABASE_URL`, and applying migrations with `alembic upgrade head`, run this command from the `backend` directory:
+
+```powershell
+python -m app.seed_demo
+```
+
+Run it when you want sample inventory in a local development database. It is never run on application startup. The command refuses non-development mode and non-local databases, and it only supports a local SQLite file. The six fictional vehicles are Toyota Corolla (Sedan, $24,000, quantity 5), Honda Civic (Sedan, $22,900, quantity 1), Ford Mustang (Coupe, $42,500, quantity 3), Tesla Model 3 (Electric, $38,900, quantity 0), Subaru Outback (Wagon, $31,900, quantity 4), and BMW X3 (SUV, $45,900, quantity 2). Re-running the command skips existing make/model pairs without changing those vehicles or any user records.
+
+Seeded vehicles are fictional local development data. This command does not populate or change a deployed website. To try customer flows, register through the SPA or `POST /api/auth/register`; public registration creates customer accounts only. To create or promote an administrator in your local development database, run `python -m app.admin_cli` and enter your own email and password at its prompts. No default admin account or demo credentials are supplied.
+
 Configuration:
 
 | Variable | Local behavior | Production behavior |

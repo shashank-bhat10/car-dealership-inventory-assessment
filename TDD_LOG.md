@@ -1,5 +1,13 @@
 # TDD log
 
+## Safe local demo inventory seeder (2026-10-25)
+
+| Behavior | Test-first evidence | Implementation and green evidence |
+| --- | --- | --- |
+| Explicit demo command seeds sample inventory idempotently, preserves existing data, and rejects unsafe mode/database targets | `dcf4335`; `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest -q tests/test_seed_demo.py`: **5 failed** because `app.seed_demo` did not yet exist; each subprocess reported `No module named app.seed_demo`. The test cases cover first run sample contents, second run with no duplicates/user changes, skipping an existing matching vehicle without overwriting it, refusal outside development, and refusal of a non-local database URL. | `3018392`; the same focused command: **5 passed** in 9.10s. The complete backend suite then passed **47 tests**, 94% coverage, one upstream warning; Ruff and a fresh SQLite migration passed. |
+
+Manual local command verification after migration: first `python -m app.seed_demo` printed `Added 6 demo vehicles; skipped 0 existing vehicles.`; the second printed `Added 0 demo vehicles; skipped 6 existing vehicles.` The SQLite query found 6 vehicles, one with quantity 1 and one with quantity 0. No hosted database was used. The seeder is not called during application startup.
+
 ## Admin-only vehicle creation and update (2026-10-25)
 
 | Behavior | Test-first evidence | Implementation and green evidence |

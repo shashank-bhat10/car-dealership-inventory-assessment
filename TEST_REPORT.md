@@ -2,7 +2,27 @@
 
 Run date: **2026-10-25** (local development session; Asia/Kolkata). These results are local observations, not GitHub Actions results.
 
-## Targeted admin-write authorization audit (2026-10-25)
+## Safe demo-data setup audit (2026-10-25)
+
+Seeder implementation commit: `3018392`; test-first commit: `dcf4335`. All database checks below used temporary local SQLite files; no hosted database was accessed.
+
+| Exact command | Observed result |
+| --- | --- |
+| From `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest -q tests/test_seed_demo.py` before implementation, at test commit `dcf4335` | **5 failed**: each subprocess reported `No module named app.seed_demo`. |
+| Same command after implementation commit `3018392` | **5 passed** in 9.10s. |
+| From `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing` | **47 passed** in 44.01s; **94% coverage** (264 statements, 16 missed). One upstream Starlette `anyio.abc.BlockingPortal` deprecation warning. |
+| From `backend`: `.\.venv\Scripts\ruff.exe check app tests` | **All checks passed!** |
+| From `backend`: `$db=Join-Path $env:TEMP ('dealership-demo-final-' + [guid]::NewGuid().ToString('N') + '.db'); $env:DATABASE_URL='sqlite:///' + ($db -replace '\\','/'); .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head` | **Passed** on fresh local database `C:\Users\Shashank\AppData\Local\Temp\dealership-demo-final-bde56694fdc440a1bf4c299e767fa975.db`; both revisions applied. |
+| From `backend`, with `ENVIRONMENT=development` and `DATABASE_URL=sqlite:///C:/Users/Shashank/AppData/Local/Temp/dealership-demo-manual-e77b379cde304379914a50e63523d180.db`: `python -m app.seed_demo` (first run) | Printed `Added 6 demo vehicles; skipped 0 existing vehicles.` |
+| Same command, second run | Printed `Added 0 demo vehicles; skipped 6 existing vehicles.` A SQLite query found 6 rows total, exactly one with quantity 1 and one with quantity 0. |
+| From `frontend`: `pnpm test` | **21 passed**, 1 Vitest file, 2.18s. |
+| From `frontend`: `pnpm lint` | **Passed**, ESLint reported no findings. |
+| From `frontend`: `pnpm build` | **Passed**; Vite transformed 1,590 modules; CSS 13.27 kB and JS 205.94 kB before gzip. |
+| `git diff --check` | **Passed** after the documentation changes. |
+
+The tests confirm refusal for production mode and for a PostgreSQL URL even with development mode set. Frontend source did not change, so the responsive/axe matrix was not rerun for this backend-only feature. The upstream Starlette/AnyIO warning was not suppressed.
+
+## Historical targeted admin-write authorization audit (2026-10-25)
 
 This targeted change follows the prior branch tip `ecb489a4fb3fd17d13f8d5ef7f938c6eb49f66f9`. The prior Actions run [40188886380](https://github.com/shashank-bhat10/car-dealership-inventory-assessment/actions/runs/40188886380) passed on that commit before admin-only create/update was introduced; it is historical for this change. Tests were committed before route implementation.
 
@@ -26,7 +46,7 @@ These checks were rerun on the clean local `submission/tdd-kata` branch at code 
 | Exact command | Observed result |
 | --- | --- |
 | From `backend`: `$env:PYTHONPATH='.'; .\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing` | **40 passed** in 28.50s; **94% coverage** (218 statements, 13 missed). One upstream Starlette `anyio.abc.BlockingPortal` deprecation warning. |
-| From `backend`: `\.venv\Scripts\ruff.exe check app tests` | **All checks passed!** |
+| From `backend`: `.\.venv\Scripts\ruff.exe check app tests` | **All checks passed!** |
 | From `backend`: `$db=Join-Path $env:TEMP ('dealership-final-' + [guid]::NewGuid().ToString('N') + '.db'); $env:DATABASE_URL='sqlite:///' + ($db -replace '\\','/'); .\.venv\Scripts\alembic.exe -c alembic.ini upgrade head` | **Passed** on fresh database `C:\Users\Shashank\AppData\Local\Temp\dealership-final-200a84705daa43079ebd4c5f5f4ccd02.db`; revisions `0001_initial` and `0002_vehicle_constraints` applied. |
 | From `frontend`: `pnpm test` | **21 passed**, 1 Vitest file, 2.57s. |
 | From `frontend`: `pnpm test:responsive -- --screenshots` | **20/20** screen/viewport combinations passed for sign-in, customer inventory/details, and admin inventory/details at 320×640, 375×812, 768×1024, and 1440×900. No overflow, control-label/target, visible-focus, or axe-core WCAG 2.1 A/AA findings. Refreshed screenshots. |
