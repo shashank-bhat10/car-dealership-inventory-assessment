@@ -154,6 +154,27 @@ describe("inventory dashboard", () => {
     expect(document.activeElement).toBe(purchaseButton);
   });
 
+  it("traps focus in a purchase confirmation and closes it with Escape", async () => {
+    localStorage.setItem("access_token", "customer-token");
+    const fetchMock = vi.fn().mockResolvedValue(response([vehicle]));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    const purchaseButton = await screen.findByRole("button", { name: "Purchase" });
+    fireEvent.click(purchaseButton);
+    const cancel = await screen.findByRole("button", { name: "Cancel" });
+    const confirm = screen.getByRole("button", { name: "Confirm purchase" });
+
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(confirm);
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(cancel);
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(document.activeElement).toBe(purchaseButton);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("confirms one purchase at a time and disables duplicate submission while pending", async () => {
     localStorage.setItem("access_token", "customer-token");
     let finishPurchase;
@@ -356,6 +377,19 @@ describe("inventory dashboard", () => {
 
     expect(await screen.findByRole("heading", { name: "No vehicles found" })).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps a delete confirmation open with a useful error if deletion fails", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response([vehicle]))
+      .mockResolvedValueOnce(response({ detail: "Vehicle cannot be deleted" }, false));
+    renderAdmin(fetchMock);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Delete vehicle" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain("Vehicle cannot be deleted");
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("submits a restock request and renders the updated stock", async () => {
