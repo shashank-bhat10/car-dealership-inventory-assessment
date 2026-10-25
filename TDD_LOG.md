@@ -18,6 +18,14 @@ Every red result below was observed before the implementation commit for that be
 - Test-first commit: recorded by the commit containing these tests.
 - Passing implementation result: pending.
 
+## Administrator inventory controls
+
+- Red test: admin-only dashboard controls in `frontend/src/App.test.jsx`.
+- Command: `pnpm exec vitest run -t 'shows administrator inventory controls'`.
+- Observed result before implementation: **1 failed, 7 skipped**. The administrator dashboard did not expose an add-vehicle form.
+- Test-first commit: recorded by the commit containing this test.
+- Passing implementation result: pending.
+
 ### Authentication role response
 
 - Red test: `test_login_identifies_bootstrap_administrator` in `backend/tests/test_login.py`

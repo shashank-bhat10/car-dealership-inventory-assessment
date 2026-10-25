@@ -111,4 +111,13 @@ describe("inventory dashboard", () => {
     expect(await screen.findByRole("heading", { name: "Volvo XC60" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Out of stock" }).hasAttribute("disabled")).toBe(true);
   });
+
+  it("shows administrator inventory controls only to an administrator", async () => {
+    localStorage.setItem("access_token", "admin-token");
+    localStorage.setItem("is_admin", "true");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => [] }));
+    render(<App />);
+    expect(await screen.findByRole("button", { name: "Add vehicle" })).toBeTruthy();
+    expect(screen.getByLabelText("Vehicle make")).toBeTruthy();
+  });
 });
