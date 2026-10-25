@@ -93,6 +93,8 @@ The colors and target sizes were adjusted based on the observed axe/viewport fin
 
 The backend review found no worthwhile refactor: the shared filter query is already extracted and conditional SQL updates already guard purchase/restock boundaries. No backend source or history was changed. The decision and evidence are recorded in `TDD_LOG.md`.
 
+The ChatGPT prompt-planning share URL in `PROMPTS.md` was opened in a fresh headless Chromium context without stored sign-in state. It returned HTTP 200 and displayed the shared-conversation notice and conversation text. The Codex conversation link was previously confirmed by the user to open without signing in.
+
 ## TDD evidence
 
 See [TDD_LOG.md](TDD_LOG.md) for red test commits, observed failing outcomes, implementation commits, passing reruns and the concurrency-test scope. Tests and test result commits precede the corresponding implementation commits throughout the recorded branch history.
