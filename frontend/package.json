@@ -7,6 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "test": "vitest run",
+    "test:responsive": "node scripts/responsive-audit.mjs",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "@testing-library/jest-dom": "6.6.3",
     "@testing-library/react": "16.2.0",
     "@testing-library/user-event": "14.6.1",
+    "axe-core": "^4.14.0",
     "eslint": "9.19.0",
     "eslint-plugin-react": "7.37.4",
     "globals": "15.14.0",
