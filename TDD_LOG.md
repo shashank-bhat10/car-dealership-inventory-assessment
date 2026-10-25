@@ -57,3 +57,5 @@ Every red result below was observed before the implementation commit for that be
 - Observed result before purchase implementation: **2 failed, 1 warning**. A valid purchase received HTTP 404; the concurrency test observed no successful purchases because the endpoint was absent. The warning was the upstream Starlette deprecation.
 - Test-first commit: recorded by the commit containing these tests.
 - Passing implementation result: pending.
+
+- Passing rerun before purchase implementation commit: python -m pytest -q tests/test_purchases.py — **2 passed, 1 upstream warning**. Eight parallel SQLite HTTP requests for three units yielded three 200 responses and five 409 responses.
