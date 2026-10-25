@@ -22,6 +22,3 @@
 | Raw prompts/share link | `PROMPTS.md` | Partial if sharing unavailable; manual export remains |
 | PostgreSQL setup | psycopg and database URL | Partial (PostgreSQL 17 service is running and port 5432 is open, but the local `postgres` connection rejects without a password) |
 | README, test report, TDD record | Root documentation | Verified |
-
-
-
