@@ -3,13 +3,17 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+  vi.unstubAllGlobals();
+});
 
 describe("account access", () => {
   it("renders a labeled sign-in form", () => {
     render(<App />);
-    expect(screen.getByLabelText("Email address")).toHaveAttribute("type", "email");
-    expect(screen.getByLabelText("Password")).toHaveAttribute("type", "password");
+    expect(screen.getByLabelText("Email address").getAttribute("type")).toBe("email");
+    expect(screen.getByLabelText("Password").getAttribute("type")).toBe("password");
     expect(screen.getByRole("button", { name: /sign in/i })).toBeTruthy();
   });
 
@@ -59,6 +63,6 @@ describe("account access", () => {
     });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "incorrect" } });
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Incorrect email or password");
+    expect((await screen.findByRole("alert")).textContent).toContain("Incorrect email or password");
   });
 });

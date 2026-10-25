@@ -85,3 +85,5 @@ Every red result below was observed before the implementation commit for that be
 - Observed result before the account UI implementation: **4 failed**. The empty app lacked the account controls, so registration and error-state interactions could not proceed.
 - Test-first commit: recorded by the commit containing these added tests.
 - Passing implementation result: pending.
+
+- Passing rerun before frontend account implementation commit: pnpm test — **4 passed**. pnpm lint — **passed**. pnpm build — **passed** (Vite transformed 1,579 modules). The first post-implementation test run exposed unsupported assertion matchers in the test file; assertions were rewritten using built-in DOM properties before the passing rerun.
